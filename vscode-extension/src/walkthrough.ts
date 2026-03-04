@@ -25,7 +25,7 @@ export class Walkthrough extends EventEmitter {
 	};
 
 	getState(): WalkthroughState {
-		return { ...this.state };
+		return { ...this.state, segments: [...this.state.segments] };
 	}
 
 	getCurrentSegment(): Segment | undefined {
@@ -139,6 +139,10 @@ export class Walkthrough extends EventEmitter {
 			this.state.currentIndex = this.state.segments.findIndex(
 				(s) => s.id === currentSegment.id,
 			);
+		} else if (this.state.segments.length === 0) {
+			this.state.currentIndex = -1;
+			this.state.status = "idle";
+			this.emit("status", this.state.status);
 		} else {
 			this.state.currentIndex = Math.min(
 				this.state.currentIndex,

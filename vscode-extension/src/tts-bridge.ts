@@ -1,4 +1,5 @@
 import * as net from "net";
+import * as fs from "fs";
 
 const SOCKET_PATH = "/tmp/tts-server.sock";
 const SAMPLE_RATE = 24000;
@@ -93,7 +94,6 @@ export function streamTTS(
  */
 export function isTTSAvailable(): boolean {
 	try {
-		const fs = require("fs");
 		return fs.existsSync(SOCKET_PATH);
 	} catch {
 		return false;

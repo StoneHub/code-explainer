@@ -1,4 +1,5 @@
 import * as http from "http";
+import * as crypto from "crypto";
 import * as os from "os";
 import * as path from "path";
 import * as fs from "fs";
@@ -7,6 +8,19 @@ import type { Walkthrough } from "./walkthrough";
 import type { ClaudeMessage, ExtensionMessage, UserActionMessage } from "./types";
 
 const PORT_FILE = path.join(os.homedir(), ".claude-explainer-port");
+const TOKEN_FILE = path.join(os.homedir(), ".claude-explainer-token");
+const MAX_BODY_SIZE = 1024 * 1024; // 1MB
+const MAX_LONG_POLL_TIMEOUT = 120_000; // 2 minutes
+
+const VALID_CLAUDE_MESSAGE_TYPES = new Set([
+	"set_plan",
+	"insert_after",
+	"replace_segment",
+	"remove_segments",
+	"goto",
+	"resume",
+	"stop",
+]);
 
 export class ExplainerServer {
 	private httpServer: http.Server;
@@ -16,9 +30,11 @@ export class ExplainerServer {
 	private pendingActions: UserActionMessage[] = [];
 	private actionWaiters: Array<(action: UserActionMessage) => void> = [];
 	private port = 0;
+	private authToken: string;
 
 	constructor(walkthrough: Walkthrough) {
 		this.walkthrough = walkthrough;
+		this.authToken = crypto.randomBytes(32).toString("hex");
 		this.httpServer = http.createServer(this.handleHttp.bind(this));
 		this.wss = new WebSocketServer({ server: this.httpServer });
 		this.wss.on("connection", this.handleWs.bind(this));
@@ -30,6 +46,7 @@ export class ExplainerServer {
 				const addr = this.httpServer.address();
 				this.port = typeof addr === "object" && addr ? addr.port : 0;
 				fs.writeFileSync(PORT_FILE, String(this.port), "utf-8");
+				fs.writeFileSync(TOKEN_FILE, this.authToken, { encoding: "utf-8", mode: 0o600 });
 				resolve(this.port);
 			});
 		});
@@ -41,6 +58,9 @@ export class ExplainerServer {
 		this.httpServer.close();
 		try {
 			fs.unlinkSync(PORT_FILE);
+		} catch {}
+		try {
+			fs.unlinkSync(TOKEN_FILE);
 		} catch {}
 	}
 
@@ -78,17 +98,30 @@ export class ExplainerServer {
 		}
 	}
 
+	// ── Auth ──
+
+	private checkAuth(req: http.IncomingMessage): boolean {
+		const auth = req.headers["authorization"];
+		if (auth === `Bearer ${this.authToken}`) return true;
+		const token = req.headers["x-auth-token"];
+		if (token === this.authToken) return true;
+		return false;
+	}
+
 	// ── HTTP handler ──
 
 	private handleHttp(req: http.IncomingMessage, res: http.ServerResponse): void {
 		res.setHeader("Content-Type", "application/json");
-		res.setHeader("Access-Control-Allow-Origin", "*");
-		res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-		res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
 		if (req.method === "OPTIONS") {
 			res.writeHead(204);
 			res.end();
+			return;
+		}
+
+		if (!this.checkAuth(req)) {
+			res.writeHead(401);
+			res.end(JSON.stringify({ error: "Unauthorized" }));
 			return;
 		}
 
@@ -97,16 +130,22 @@ export class ExplainerServer {
 		if (req.method === "GET" && url.pathname === "/api/state") {
 			this.handleGetState(res);
 		} else if (req.method === "GET" && url.pathname === "/api/actions") {
-			const timeout = parseInt(url.searchParams.get("timeout") || "30", 10) * 1000;
+			const rawTimeout = parseInt(url.searchParams.get("timeout") || "30", 10) * 1000;
+			const timeout = Math.min(Math.max(rawTimeout, 1000), MAX_LONG_POLL_TIMEOUT);
 			this.handleGetActions(res, timeout);
-		} else if (req.method === "POST") {
-			this.readBody(req, (body) => {
+		} else if (req.method === "POST" && url.pathname === "/api/message") {
+			this.readBody(req, res, (body) => {
 				try {
-					const msg = JSON.parse(body) as ClaudeMessage;
-					this.handleClaudeMessage(msg);
+					const msg = JSON.parse(body);
+					if (!this.validateClaudeMessage(msg)) {
+						res.writeHead(400);
+						res.end(JSON.stringify({ error: "Invalid message format" }));
+						return;
+					}
+					this.handleClaudeMessage(msg as ClaudeMessage);
 					res.writeHead(200);
 					res.end(JSON.stringify({ ok: true }));
-				} catch (err) {
+				} catch {
 					res.writeHead(400);
 					res.end(JSON.stringify({ error: "Invalid JSON" }));
 				}
@@ -170,9 +209,15 @@ export class ExplainerServer {
 
 		ws.on("message", (data) => {
 			try {
-				const msg = JSON.parse(data.toString()) as ClaudeMessage;
-				this.handleClaudeMessage(msg);
-			} catch {}
+				const msg = JSON.parse(data.toString());
+				if (!this.validateClaudeMessage(msg)) {
+					console.error("[code-explainer] Invalid WS message format");
+					return;
+				}
+				this.handleClaudeMessage(msg as ClaudeMessage);
+			} catch (err) {
+				console.error("[code-explainer] Invalid WS message:", err);
+			}
 		});
 
 		ws.on("close", () => {
@@ -181,6 +226,32 @@ export class ExplainerServer {
 
 		// Send current state on connect
 		this.broadcastState();
+	}
+
+	// ── Validation ──
+
+	private validateClaudeMessage(msg: unknown): boolean {
+		if (!msg || typeof msg !== "object") return false;
+		const m = msg as Record<string, unknown>;
+		if (typeof m.type !== "string" || !VALID_CLAUDE_MESSAGE_TYPES.has(m.type)) return false;
+
+		switch (m.type) {
+			case "set_plan":
+				return typeof m.title === "string" && Array.isArray(m.segments);
+			case "insert_after":
+				return typeof m.afterSegment === "number" && Array.isArray(m.segments);
+			case "replace_segment":
+				return typeof m.id === "number" && typeof m.segment === "object" && m.segment !== null;
+			case "remove_segments":
+				return Array.isArray(m.ids);
+			case "goto":
+				return typeof m.segmentId === "number";
+			case "resume":
+			case "stop":
+				return true;
+			default:
+				return false;
+		}
 	}
 
 	// ── Message dispatch ──
@@ -197,9 +268,18 @@ export class ExplainerServer {
 
 	// ── Helpers ──
 
-	private readBody(req: http.IncomingMessage, cb: (body: string) => void): void {
+	private readBody(req: http.IncomingMessage, res: http.ServerResponse, cb: (body: string) => void): void {
 		let body = "";
-		req.on("data", (chunk) => (body += chunk));
-		req.on("end", () => cb(body));
+		req.on("data", (chunk) => {
+			body += chunk;
+			if (body.length > MAX_BODY_SIZE) {
+				res.writeHead(413);
+				res.end(JSON.stringify({ error: "Request body too large" }));
+				req.destroy();
+			}
+		});
+		req.on("end", () => {
+			if (!res.writableEnded) cb(body);
+		});
 	}
 }

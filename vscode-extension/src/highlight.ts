@@ -32,8 +32,7 @@ export async function highlightRange(
 }
 
 export function clearHighlights(): void {
-	const editor = vscode.window.activeTextEditor;
-	if (editor) {
+	for (const editor of vscode.window.visibleTextEditors) {
 		editor.setDecorations(highlightDecoration, []);
 	}
 }

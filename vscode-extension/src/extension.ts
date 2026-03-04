@@ -67,7 +67,7 @@ let abortTTS: (() => void) | undefined;
 
 // TTS settings — updated by webview messages
 let ttsVoice = "af_heart";
-let ttsSpeed = 1.0;
+let ttsSpeed = 1.5;
 
 export function activate(context: vscode.ExtensionContext): void {
 	const walkthrough = new Walkthrough();
