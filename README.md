@@ -19,7 +19,8 @@
   <a href="#-usage">Usage</a> &bull;
   <a href="#-modes">Modes</a> &bull;
   <a href="#-voice-configuration">Voice Config</a> &bull;
-  <a href="#-architecture">Architecture</a>
+  <a href="#-architecture">Architecture</a> &bull;
+  <a href="docs/uninstall.md">Uninstall</a>
 </p>
 
 ---
