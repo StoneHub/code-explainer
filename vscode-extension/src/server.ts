@@ -127,7 +127,10 @@ export class ExplainerServer {
 
 		const url = new URL(req.url || "/", `http://127.0.0.1:${this.port}`);
 
-		if (req.method === "GET" && url.pathname === "/api/state") {
+		if (req.method === "GET" && url.pathname === "/api/health") {
+			res.writeHead(200);
+			res.end(JSON.stringify({ status: "ok" }));
+		} else if (req.method === "GET" && url.pathname === "/api/state") {
 			this.handleGetState(res);
 		} else if (req.method === "GET" && url.pathname === "/api/actions") {
 			const rawTimeout = parseInt(url.searchParams.get("timeout") || "30", 10) * 1000;

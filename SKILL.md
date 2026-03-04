@@ -20,7 +20,7 @@ Interactive code walkthrough skill. Scans the codebase for a feature, builds a s
 
 You MUST complete these steps in order:
 
-0. **Check sidebar FIRST** — Run `cat ~/.claude-explainer-port`. If it returns a port, the sidebar is active. When the sidebar is active, **NEVER output walkthrough content as terminal text**. All explanations go exclusively through the sidebar HTTP API. Skip straight to scanning + building the plan JSON.
+0. **Check sidebar FIRST** — Run `cat ~/.claude-explainer-port` to get the port, then `cat ~/.claude-explainer-token` to get the auth token, then hit `curl -s -H "Authorization: Bearer <token>" http://localhost:<port>/api/health`. If it returns `{"status":"ok"}`, the sidebar is active. When the sidebar is active, **NEVER output walkthrough content as terminal text**. All explanations go exclusively through the sidebar HTTP API. Skip straight to scanning + building the plan JSON.
 1. **Assess familiarity** — Read `docs/step1-assess.md` and ask the user their preferences.
 2. **Scan the codebase** — Read `docs/step2-scan.md` for sub-agent dispatch instructions.
 3. **Build walkthrough plan** — Read `docs/step3-plan.md` for plan format and presentation.
