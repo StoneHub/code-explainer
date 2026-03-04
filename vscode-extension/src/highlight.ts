@@ -1,19 +1,18 @@
 import * as vscode from "vscode";
 
-// Non-active segment lines: dimmed out
-const segmentDecoration = vscode.window.createTextEditorDecorationType({
+// Dim decoration for lines outside the current segment
+const dimDecoration = vscode.window.createTextEditorDecorationType({
 	opacity: "0.35",
 	isWholeLine: true,
-	overviewRulerColor: "rgba(255, 255, 255, 0.15)",
-	overviewRulerLane: vscode.OverviewRulerLane.Center,
 });
 
-// Active sub-highlight: full opacity with left border accent
+// Active sub-highlight: warm selection band with top/bottom borders
 const activeDecoration = vscode.window.createTextEditorDecorationType({
 	isWholeLine: true,
-	borderWidth: "0 0 0 3px",
+	backgroundColor: "rgba(255, 190, 60, 0.07)",
+	borderWidth: "1px 0",
 	borderStyle: "solid",
-	borderColor: "rgba(255, 190, 60, 0.8)",
+	borderColor: "rgba(255, 190, 60, 0.3)",
 	overviewRulerColor: "rgba(255, 190, 60, 0.5)",
 	overviewRulerLane: vscode.OverviewRulerLane.Center,
 });
@@ -23,34 +22,24 @@ let currentSegmentStart = 0;
 let currentSegmentEnd = 0;
 
 /**
- * Build ranges for all lines in [segStart, segEnd] EXCLUDING [activeStart, activeEnd].
+ * Build ranges for all lines OUTSIDE [segStart, segEnd].
  * All values are 0-based line numbers.
  */
 function buildDimRanges(
 	doc: vscode.TextDocument,
 	segStart: number,
 	segEnd: number,
-	activeStart?: number,
-	activeEnd?: number,
 ): vscode.Range[] {
 	const ranges: vscode.Range[] = [];
+	const lastLine = doc.lineCount - 1;
 
-	if (activeStart === undefined || activeEnd === undefined) {
-		// Dim the entire segment
-		for (let i = segStart; i <= segEnd; i++) {
-			const line = doc.lineAt(i);
-			ranges.push(new vscode.Range(line.range.start, line.range.end));
-		}
-		return ranges;
-	}
-
-	// Dim lines before the active range
-	for (let i = segStart; i < activeStart; i++) {
+	// Lines before the segment
+	for (let i = 0; i < segStart; i++) {
 		const line = doc.lineAt(i);
 		ranges.push(new vscode.Range(line.range.start, line.range.end));
 	}
-	// Dim lines after the active range
-	for (let i = activeEnd + 1; i <= segEnd; i++) {
+	// Lines after the segment
+	for (let i = segEnd + 1; i <= lastLine; i++) {
 		const line = doc.lineAt(i);
 		ranges.push(new vscode.Range(line.range.start, line.range.end));
 	}
@@ -80,9 +69,9 @@ export async function highlightSegmentRange(
 		preserveFocus: false,
 	});
 
-	// Dim all segment lines
+	// Dim everything outside the segment
 	const dimRanges = buildDimRanges(doc, zeroStart, zeroEnd);
-	editor.setDecorations(segmentDecoration, dimRanges);
+	editor.setDecorations(dimDecoration, dimRanges);
 	// Clear any previous active highlight
 	editor.setDecorations(activeDecoration, []);
 
@@ -114,9 +103,9 @@ export async function highlightSubRange(
 		preserveFocus: false,
 	});
 
-	// Re-compute dim ranges excluding the active sub-range
-	const dimRanges = buildDimRanges(doc, currentSegmentStart, currentSegmentEnd, zeroStart, zeroEnd);
-	editor.setDecorations(segmentDecoration, dimRanges);
+	// Dim everything outside the segment (unchanged from segment-level)
+	const dimRanges = buildDimRanges(doc, currentSegmentStart, currentSegmentEnd);
+	editor.setDecorations(dimDecoration, dimRanges);
 
 	// Apply gold border to active lines
 	const startPos = new vscode.Position(zeroStart, 0);
@@ -153,7 +142,7 @@ export async function highlightRange(
 	editor.selection = new vscode.Selection(startPos, startPos);
 	editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
 	// For legacy mode, dim the range and add active border
-	editor.setDecorations(segmentDecoration, []);
+	editor.setDecorations(dimDecoration, []);
 	editor.setDecorations(activeDecoration, [range]);
 }
 
@@ -178,12 +167,12 @@ export async function restoreSmoothScrolling(): Promise<void> {
 
 export function clearHighlights(): void {
 	for (const editor of vscode.window.visibleTextEditors) {
-		editor.setDecorations(segmentDecoration, []);
+		editor.setDecorations(dimDecoration, []);
 		editor.setDecorations(activeDecoration, []);
 	}
 }
 
 export function disposeHighlights(): void {
-	segmentDecoration.dispose();
+	dimDecoration.dispose();
 	activeDecoration.dispose();
 }
