@@ -40,6 +40,10 @@ export class Walkthrough extends EventEmitter {
 		this.state = { title, segments, currentIndex: 0, currentHighlightIndex: 0, status: "paused" };
 		this.emit("plan", this.getState());
 		this.emit("status", this.state.status);
+		// Show the first segment (code location) without starting playback
+		if (segments.length > 0) {
+			this.emit("segment", segments[0]);
+		}
 	}
 
 	stop(): void {
@@ -104,6 +108,17 @@ export class Walkthrough extends EventEmitter {
 		this.state.currentHighlightIndex = 0;
 		this.state.status = "playing";
 		this.emit("status", this.state.status);
+		this.emit("segment", this.state.segments[idx]);
+		return true;
+	}
+
+	/** Navigate to a segment without changing playback status (no auto-play). */
+	navigateTo(segmentId: number): boolean {
+		const idx = this.state.segments.findIndex((s) => s.id === segmentId);
+		if (idx === -1) return false;
+		this.state.currentIndex = idx;
+		this.state.currentHighlightIndex = 0;
+		this.emit("plan", this.getState());
 		this.emit("segment", this.state.segments[idx]);
 		return true;
 	}
