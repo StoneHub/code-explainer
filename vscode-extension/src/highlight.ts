@@ -1,26 +1,65 @@
 import * as vscode from "vscode";
 
-// Dim background for the full segment range
-const segmentDecoration = vscode.window.createTextEditorDecorationType({
-	backgroundColor: "rgba(130, 170, 255, 0.06)",
+// Spotlight: dim inactive lines within the segment
+const dimDecoration = vscode.window.createTextEditorDecorationType({
+	opacity: "0.35",
 	isWholeLine: true,
-	overviewRulerColor: "rgba(130, 170, 255, 0.35)",
+	overviewRulerColor: "rgba(130, 170, 255, 0.25)",
 	overviewRulerLane: vscode.OverviewRulerLane.Center,
 });
 
-// Bright highlight for the active sub-highlight
+// Active sub-highlight: warm gold left border accent, no background
 const activeDecoration = vscode.window.createTextEditorDecorationType({
-	backgroundColor: "rgba(97, 218, 251, 0.15)",
 	isWholeLine: true,
 	borderWidth: "0 0 0 3px",
 	borderStyle: "solid",
-	borderColor: "rgba(97, 218, 251, 0.7)",
-	overviewRulerColor: "rgba(97, 218, 251, 0.6)",
+	borderColor: "rgba(255, 190, 60, 0.7)",
+	overviewRulerColor: "rgba(255, 190, 60, 0.5)",
 	overviewRulerLane: vscode.OverviewRulerLane.Center,
 });
 
+// Track current segment range for computing dim regions
+let currentSegmentStart = 0;
+let currentSegmentEnd = 0;
+
 /**
- * Open a file and apply the dim segment background.
+ * Build ranges for all lines in [segStart, segEnd] EXCLUDING [activeStart, activeEnd].
+ * All values are 0-based line numbers.
+ */
+function buildDimRanges(
+	doc: vscode.TextDocument,
+	segStart: number,
+	segEnd: number,
+	activeStart?: number,
+	activeEnd?: number,
+): vscode.Range[] {
+	const ranges: vscode.Range[] = [];
+
+	if (activeStart === undefined || activeEnd === undefined) {
+		// Dim the entire segment
+		for (let i = segStart; i <= segEnd; i++) {
+			const line = doc.lineAt(i);
+			ranges.push(new vscode.Range(line.range.start, line.range.end));
+		}
+		return ranges;
+	}
+
+	// Dim lines before the active range
+	for (let i = segStart; i < activeStart; i++) {
+		const line = doc.lineAt(i);
+		ranges.push(new vscode.Range(line.range.start, line.range.end));
+	}
+	// Dim lines after the active range
+	for (let i = activeEnd + 1; i <= segEnd; i++) {
+		const line = doc.lineAt(i);
+		ranges.push(new vscode.Range(line.range.start, line.range.end));
+	}
+
+	return ranges;
+}
+
+/**
+ * Open a file and dim the entire segment range (spotlight mode).
  * Returns the editor for subsequent sub-highlight calls.
  */
 export async function highlightSegmentRange(
@@ -31,6 +70,9 @@ export async function highlightSegmentRange(
 	const zeroStart = Math.max(0, startLine - 1);
 	const zeroEnd = Math.max(zeroStart, endLine - 1);
 
+	currentSegmentStart = zeroStart;
+	currentSegmentEnd = zeroEnd;
+
 	const uri = vscode.Uri.file(filePath);
 	const doc = await vscode.workspace.openTextDocument(uri);
 	const editor = await vscode.window.showTextDocument(doc, {
@@ -38,14 +80,15 @@ export async function highlightSegmentRange(
 		preserveFocus: false,
 	});
 
+	// Dim all segment lines
+	const dimRanges = buildDimRanges(doc, zeroStart, zeroEnd);
+	editor.setDecorations(dimDecoration, dimRanges);
+	// Clear any previous active highlight
+	editor.setDecorations(activeDecoration, []);
+
 	const startPos = new vscode.Position(zeroStart, 0);
 	const endPos = new vscode.Position(zeroEnd, doc.lineAt(zeroEnd).text.length);
 	const range = new vscode.Range(startPos, endPos);
-
-	editor.setDecorations(segmentDecoration, [range]);
-	// Clear any previous active highlight
-	editor.setDecorations(activeDecoration, []);
-	// Reveal full range initially
 	editor.selection = new vscode.Selection(startPos, startPos);
 	editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
 
@@ -53,7 +96,7 @@ export async function highlightSegmentRange(
 }
 
 /**
- * Apply the bright active highlight to a sub-range and scroll to it.
+ * Spotlight a sub-range: undim the active lines, dim the rest, add gold border.
  * The editor must already be open (from highlightSegmentRange).
  */
 export async function highlightSubRange(
@@ -71,13 +114,18 @@ export async function highlightSubRange(
 		preserveFocus: false,
 	});
 
+	// Re-compute dim ranges excluding the active sub-range
+	const dimRanges = buildDimRanges(doc, currentSegmentStart, currentSegmentEnd, zeroStart, zeroEnd);
+	editor.setDecorations(dimDecoration, dimRanges);
+
+	// Apply gold border to active lines
 	const startPos = new vscode.Position(zeroStart, 0);
 	const endPos = new vscode.Position(zeroEnd, doc.lineAt(zeroEnd).text.length);
-	const range = new vscode.Range(startPos, endPos);
+	const activeRange = new vscode.Range(startPos, endPos);
+	editor.setDecorations(activeDecoration, [activeRange]);
 
-	editor.setDecorations(activeDecoration, [range]);
 	editor.selection = new vscode.Selection(startPos, startPos);
-	editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+	editor.revealRange(activeRange, vscode.TextEditorRevealType.InCenter);
 }
 
 /**
@@ -104,8 +152,9 @@ export async function highlightRange(
 
 	editor.selection = new vscode.Selection(startPos, startPos);
 	editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
-	editor.setDecorations(segmentDecoration, [range]);
-	editor.setDecorations(activeDecoration, []);
+	// For legacy mode, dim the range and add active border
+	editor.setDecorations(dimDecoration, []);
+	editor.setDecorations(activeDecoration, [range]);
 }
 
 // ── Smooth scrolling management ──
@@ -129,12 +178,12 @@ export async function restoreSmoothScrolling(): Promise<void> {
 
 export function clearHighlights(): void {
 	for (const editor of vscode.window.visibleTextEditors) {
-		editor.setDecorations(segmentDecoration, []);
+		editor.setDecorations(dimDecoration, []);
 		editor.setDecorations(activeDecoration, []);
 	}
 }
 
 export function disposeHighlights(): void {
-	segmentDecoration.dispose();
+	dimDecoration.dispose();
 	activeDecoration.dispose();
 }
