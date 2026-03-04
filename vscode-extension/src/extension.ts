@@ -149,6 +149,18 @@ export function activate(context: vscode.ExtensionContext): void {
 		const myGeneration = ++highlightLoopGeneration;
 
 		const highlights = segment.highlights;
+
+		// If not playing, just show the code location without starting TTS
+		if (wt.getState().status !== "playing") {
+			if (highlights && highlights.length > 0) {
+				await highlightSegmentRange(segment.file, segment.start, segment.end).catch(() => {});
+			} else {
+				highlightRange(segment.file, segment.start, segment.end).catch(() => {});
+			}
+			sb.updateState(wt.getState());
+			return;
+		}
+
 		if (!highlights || highlights.length === 0) {
 			// Fallback: single highlight, single TTS (legacy behavior)
 			highlightRange(segment.file, segment.start, segment.end).catch(() => {});
@@ -270,7 +282,7 @@ export function activate(context: vscode.ExtensionContext): void {
 				walkthrough.removeSegments(msg.ids);
 				break;
 			case "goto":
-				walkthrough.goto(msg.segmentId);
+				walkthrough.navigateTo(msg.segmentId);
 				break;
 			case "resume":
 				walkthrough.play();
