@@ -20,6 +20,7 @@ Interactive code walkthrough skill. Scans the codebase for a feature, builds a s
 
 You MUST complete these steps in order:
 
+0. **Check sidebar FIRST** — Run `cat ~/.claude-explainer-port`. If it returns a port, the sidebar is active. When the sidebar is active, **NEVER output walkthrough content as terminal text**. All explanations go exclusively through the sidebar HTTP API. Skip straight to scanning + building the plan JSON.
 1. **Assess familiarity** — Read `docs/step1-assess.md` and ask the user their preferences.
 2. **Scan the codebase** — Read `docs/step2-scan.md` for sub-agent dispatch instructions.
 3. **Build walkthrough plan** — Read `docs/step3-plan.md` for plan format and presentation.
@@ -48,3 +49,5 @@ You MUST complete these steps in order:
 | Missing the "why" | Always explain intent before mechanism — what problem does this code solve? |
 | Ignoring complexity tags | Use `[core]`/`[wiring]`/`[supporting]` from the plan to calibrate explanation depth |
 | Not checking for sidebar | Check if `~/.claude-explainer-port` exists to determine sidebar vs fallback mode |
+| Dumping text before sidebar | Check sidebar port in step 0 BEFORE any text output. If sidebar is active, send plan JSON only — no terminal text |
+| Sub-highlights too broad | Each sub-highlight must be 5-15 lines focused on key code, NOT a partition of the full segment. Target 30-60% line coverage, not 80%+ |
