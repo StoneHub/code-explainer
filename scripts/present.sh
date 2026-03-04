@@ -1,31 +1,57 @@
 #!/bin/bash
 # Presentation conductor — plays a code walkthrough with synced highlights + voice.
 # Reads a generated script of highlight + narration steps.
-# Usage: present.sh <script_file>
+# Usage: present.sh [--stream] <script_file>
 #   where script_file contains lines of: FILE|START|END|NARRATION
 #
-# Each line highlights the range, then speaks the narration (blocking).
-# When narration finishes, the next highlight fires — natural sync.
+# Batch mode (default): Reads complete file, processes all lines.
+# Stream mode (--stream): Follows file with tail -f, processes lines as they
+#   appear. Stops when it encounters an "END" line. Use this when the script
+#   is being generated progressively — playback starts immediately while new
+#   lines are still being appended.
 #
 # Send SIGTERM or SIGINT to stop.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-SCRIPT_FILE="$1"
 VENV_PYTHON="$ROOT_DIR/.venv/bin/python3"
 KOKORO_SCRIPT="$SCRIPT_DIR/kokoro_speak.py"
 
-if [ -z "$SCRIPT_FILE" ] || [ ! -f "$SCRIPT_FILE" ]; then
-    echo "Usage: present.sh <script_file>"
+# Parse flags
+STREAM_MODE=false
+if [ "$1" = "--stream" ]; then
+    STREAM_MODE=true
+    shift
+fi
+
+SCRIPT_FILE="$1"
+
+if [ -z "$SCRIPT_FILE" ]; then
+    echo "Usage: present.sh [--stream] <script_file>"
     exit 1
 fi
 
-# Cleanup on exit — kill any lingering speech process
+# In stream mode, create the file if it doesn't exist yet (writer may not have started)
+if $STREAM_MODE && [ ! -f "$SCRIPT_FILE" ]; then
+    touch "$SCRIPT_FILE"
+fi
+
+if [ ! -f "$SCRIPT_FILE" ]; then
+    echo "Error: script file not found: $SCRIPT_FILE"
+    exit 1
+fi
+
+# Track child processes for cleanup
+TAIL_PID=""
+STREAM_FIFO=""
+
 cleanup() {
     killall afplay say 2>/dev/null
+    [ -n "$TAIL_PID" ] && kill "$TAIL_PID" 2>/dev/null
+    [ -n "$STREAM_FIFO" ] && rm -f "$STREAM_FIFO"
     exit 0
 }
-trap cleanup SIGTERM SIGINT
+trap cleanup SIGTERM SIGINT EXIT
 
 # Determine TTS method: Kokoro (high quality) or macOS say (fallback)
 use_kokoro=false
@@ -35,11 +61,16 @@ if [ -x "$VENV_PYTHON" ] && [ -f "$KOKORO_SCRIPT" ]; then
     "$VENV_PYTHON" "$KOKORO_SCRIPT" "" 2>/dev/null || true
 fi
 
-# Read and execute each step
-while IFS='|' read -r FILE START END NARRATION; do
+# Process a single presentation line
+process_line() {
+    local FILE="$1" START="$2" END="$3" NARRATION="$4"
+
     # Skip empty lines and comments
-    [ -z "$FILE" ] && continue
-    [[ "$FILE" == \#* ]] && continue
+    [ -z "$FILE" ] && return 0
+    [[ "$FILE" == \#* ]] && return 0
+
+    # END sentinel — signal completion
+    [ "$FILE" = "END" ] && return 1
 
     # Highlight the range in the editor
     "$SCRIPT_DIR/highlight.sh" "$FILE" "$START" "$END"
@@ -56,4 +87,25 @@ while IFS='|' read -r FILE START END NARRATION; do
 
     # Brief pause between steps
     sleep 0.4
-done < "$SCRIPT_FILE"
+    return 0
+}
+
+if $STREAM_MODE; then
+    # Stream mode: follow the file as lines are appended.
+    # Uses a named pipe so the while loop runs in the current shell
+    # (not a subshell), allowing clean break + cleanup.
+    STREAM_FIFO=$(mktemp -u /tmp/present-fifo.XXXXXX)
+    mkfifo "$STREAM_FIFO"
+
+    tail -n +1 -f "$SCRIPT_FILE" > "$STREAM_FIFO" &
+    TAIL_PID=$!
+
+    while IFS='|' read -r FILE START END NARRATION; do
+        process_line "$FILE" "$START" "$END" "$NARRATION" || break
+    done < "$STREAM_FIFO"
+else
+    # Batch mode: read the complete file (original behavior)
+    while IFS='|' read -r FILE START END NARRATION; do
+        process_line "$FILE" "$START" "$END" "$NARRATION" || break
+    done < "$SCRIPT_FILE"
+fi
