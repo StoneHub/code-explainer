@@ -1,16 +1,18 @@
 import * as vscode from "vscode";
 
-// Spotlight: dim inactive lines within the segment
-const dimDecoration = vscode.window.createTextEditorDecorationType({
-	opacity: "0.35",
+// Faint highlight for non-active segment lines: dimmed with subtle blue tint
+const segmentDecoration = vscode.window.createTextEditorDecorationType({
+	opacity: "0.45",
 	isWholeLine: true,
-	overviewRulerColor: "rgba(130, 170, 255, 0.25)",
+	backgroundColor: "rgba(100, 200, 130, 0.06)",
+	overviewRulerColor: "rgba(100, 200, 130, 0.25)",
 	overviewRulerLane: vscode.OverviewRulerLane.Center,
 });
 
-// Active sub-highlight: warm gold left border accent, no background
+// Active sub-highlight: distinct background + gold left border
 const activeDecoration = vscode.window.createTextEditorDecorationType({
 	isWholeLine: true,
+	backgroundColor: "rgba(255, 190, 60, 0.12)",
 	borderWidth: "0 0 0 3px",
 	borderStyle: "solid",
 	borderColor: "rgba(255, 190, 60, 0.7)",
@@ -82,7 +84,7 @@ export async function highlightSegmentRange(
 
 	// Dim all segment lines
 	const dimRanges = buildDimRanges(doc, zeroStart, zeroEnd);
-	editor.setDecorations(dimDecoration, dimRanges);
+	editor.setDecorations(segmentDecoration, dimRanges);
 	// Clear any previous active highlight
 	editor.setDecorations(activeDecoration, []);
 
@@ -116,7 +118,7 @@ export async function highlightSubRange(
 
 	// Re-compute dim ranges excluding the active sub-range
 	const dimRanges = buildDimRanges(doc, currentSegmentStart, currentSegmentEnd, zeroStart, zeroEnd);
-	editor.setDecorations(dimDecoration, dimRanges);
+	editor.setDecorations(segmentDecoration, dimRanges);
 
 	// Apply gold border to active lines
 	const startPos = new vscode.Position(zeroStart, 0);
@@ -153,7 +155,7 @@ export async function highlightRange(
 	editor.selection = new vscode.Selection(startPos, startPos);
 	editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
 	// For legacy mode, dim the range and add active border
-	editor.setDecorations(dimDecoration, []);
+	editor.setDecorations(segmentDecoration, []);
 	editor.setDecorations(activeDecoration, [range]);
 }
 
@@ -178,12 +180,12 @@ export async function restoreSmoothScrolling(): Promise<void> {
 
 export function clearHighlights(): void {
 	for (const editor of vscode.window.visibleTextEditors) {
-		editor.setDecorations(dimDecoration, []);
+		editor.setDecorations(segmentDecoration, []);
 		editor.setDecorations(activeDecoration, []);
 	}
 }
 
 export function disposeHighlights(): void {
-	dimDecoration.dispose();
+	segmentDecoration.dispose();
 	activeDecoration.dispose();
 }
