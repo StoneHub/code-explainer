@@ -34,4 +34,4 @@ Default to **Interactive (text only)** if the user doesn't answer.
 
 Default to **1x**.
 
-After getting answers, save to config file (see `docs/config.md`). Track all settings throughout the session.
+Track all settings throughout the session.
