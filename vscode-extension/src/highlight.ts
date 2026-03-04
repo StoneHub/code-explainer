@@ -6,13 +6,13 @@ const dimDecoration = vscode.window.createTextEditorDecorationType({
 	isWholeLine: true,
 });
 
-// Active sub-highlight: bright left border accent
+// Active sub-highlight: warm selection band with top/bottom borders
 const activeDecoration = vscode.window.createTextEditorDecorationType({
 	isWholeLine: true,
-	borderWidth: "0 0 0 3px",
+	backgroundColor: "rgba(255, 190, 60, 0.07)",
+	borderWidth: "1px 0",
 	borderStyle: "solid",
-	borderColor: "rgba(255, 190, 60, 1)",
-	backgroundColor: "rgba(255, 255, 255, 0.04)",
+	borderColor: "rgba(255, 190, 60, 0.3)",
 	overviewRulerColor: "rgba(255, 190, 60, 0.5)",
 	overviewRulerLane: vscode.OverviewRulerLane.Center,
 });
