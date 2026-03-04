@@ -23,7 +23,12 @@ Return a structured result:
 - **Core files**: list of files with brief description of each
 - **Call chain**: what calls what (A -> B -> C)
 - **Walkthrough plan**: ordered list of segments, each as:
-  {file_absolute_path}:{startLine}-{endLine} -- {brief description}
+  {file_absolute_path}:{startLine}-{endLine} -- {brief description} [{complexity}]
+
+  Where {complexity} is one of:
+  - `[core]` — central logic, the "meat" of the feature. Explain thoroughly.
+  - `[wiring]` — boilerplate, config, module setup, DI registration. Breeze through.
+  - `[supporting]` — helpers, utilities, types. Explain briefly.
 
 Depth level: {overview|detailed|focused}
 Segment sizing:
