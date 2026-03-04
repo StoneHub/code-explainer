@@ -22,8 +22,10 @@ interface HighlightRequest {
 let fileWatcher: fs.StatWatcher | undefined;
 
 function startFileWatcher(): void {
+	// Delete any stale highlight file from a previous session
+	// instead of processing it — only react to NEW highlight requests
 	try {
-		processHighlightFile();
+		fs.unlinkSync(HIGHLIGHT_FILE);
 	} catch {}
 
 	fileWatcher = fs.watchFile(
