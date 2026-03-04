@@ -23,6 +23,7 @@ export function streamTTS(
 	onError: (err: Error) => void,
 ): () => void {
 	let aborted = false;
+	let ended = false;
 
 	const conn = net.createConnection(SOCKET_PATH);
 
@@ -52,6 +53,7 @@ export function streamTTS(
 
 				if (expectedLength === 0) {
 					// End-of-stream marker
+					ended = true;
 					onEnd();
 					conn.destroy();
 					return;
@@ -78,7 +80,7 @@ export function streamTTS(
 
 	conn.on("close", () => {
 		// If we didn't get an end marker, still signal end
-		if (!aborted && waitingForHeader && buffer.length === 0) {
+		if (!aborted && !ended && waitingForHeader && buffer.length === 0) {
 			onEnd();
 		}
 	});
