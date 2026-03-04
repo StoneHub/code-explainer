@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 
 const highlightDecoration = vscode.window.createTextEditorDecorationType({
-	backgroundColor: "rgba(255, 213, 79, 0.18)",
+	backgroundColor: "rgba(255, 213, 79, 0.08)",
 	isWholeLine: true,
-	overviewRulerColor: "rgba(255, 213, 79, 0.6)",
+	overviewRulerColor: "rgba(255, 213, 79, 0.4)",
 	overviewRulerLane: vscode.OverviewRulerLane.Center,
 });
 
