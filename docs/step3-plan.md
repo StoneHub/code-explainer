@@ -5,7 +5,7 @@
 Parse the sub-agent's response into an ordered list of segments. Each segment is:
 
 ```
-{number}. {file}:{startLine}-{endLine} -- {brief description}
+{number}. {file}:{startLine}-{endLine} -- {brief description} [{complexity}]
 ```
 
 **Verify the plan:**
@@ -21,9 +21,10 @@ Show the plan to the user in a numbered list:
 ```
 I'll walk through {feature} in {N} segments:
 
-1. src/controllers/auth.controller.ts:10-45 -- HTTP endpoint, request validation
-2. src/services/auth.service.ts:20-65 -- Core authentication logic
-3. src/services/token.service.ts:15-50 -- JWT generation and verification
+1. src/controllers/auth.controller.ts:10-45 -- HTTP endpoint, request validation [core]
+2. src/modules/auth.module.ts:1-30 -- Module registration and DI wiring [wiring]
+3. src/services/auth.service.ts:20-65 -- Core authentication logic [core]
+4. src/services/token.service.ts:15-50 -- JWT generation and verification [supporting]
 ...
 
 Ready to start? You can reorder, skip, or add segments.

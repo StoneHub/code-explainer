@@ -30,19 +30,31 @@ Read(file_path, offset=startLine, limit=endLine-startLine+1)
 
 ## 5c. Explain the Segment
 
-**Structure your explanation as:**
+**Adapt your depth based on the segment's complexity tag:**
+- `[core]` segments — full explanation using all 5 parts below
+- `[wiring]` segments — 1-2 sentences max: "This is standard NestJS module wiring — it registers the services we just saw. The interesting part is next."
+- `[supporting]` segments — brief explanation, focus on what it enables for core segments
 
-1. **Context line** (1 sentence) -- how this connects to the previous segment or the overall flow
-2. **What this code does** -- explain the segment's purpose
-3. **Key details** (depth-dependent):
-   - Overview: skip implementation details, focus on what and why
-   - Detailed: explain patterns, design decisions, edge cases, why it's written this way
-4. **Connection forward** (1 sentence) -- what comes next and why
+**Structure your explanation as (for `[core]` segments):**
+
+1. **Intent** (1-2 sentences) — What problem does this code solve? Why does it exist? What would break without it? Lead with this BEFORE describing any mechanics.
+2. **Mechanism** — Walk through the code, grouped by concept (not strictly line-by-line). Reference specific lines.
+   - Overview depth: 3-6 sentences, skip implementation details
+   - Detailed depth: 6-12 sentences, include patterns, design decisions, edge cases
+3. **Concrete scenario** (1 sentence) — Ground it in a real user action: "When a user clicks Buy, this validates the price hasn't drifted more than 2% since they saw the quote."
+4. **Non-obvious decisions** (only if genuine) — Call out surprising choices, deliberate trade-offs, or unusual patterns. Skip this entirely if the code is straightforward. Don't manufacture insights.
+5. **Thread forward** (1 sentence) — What mental model should the listener carry into the next segment? Not just "next we look at X" but "now that we know how orders are validated, we'll see how they get matched against the order book."
+
+**What NOT to explain:**
+- Import blocks — unless unusual imports reveal architecture decisions
+- Standard loops, null checks, try/catch — unless the catch logic IS the interesting part
+- Boilerplate (module decorators, standard constructor DI, getter/setter patterns)
+- Anything a developer at the target depth level would immediately understand
+- When a segment is mostly boilerplate, acknowledge it: "This is standard setup — the key line is 34 where..."
 
 **Formatting rules:**
 - Reference specific line numbers: "On line 42, the `matchOrders()` call..."
 - Use the file_path:line_number pattern for cross-references
-- Keep each segment explanation concise -- aim for 3-8 sentences for overview, 8-15 for detailed
 - Use code inline references with backticks for variable/function names
 
 ## 5c-tts. Speak the Explanation (if TTS enabled)
