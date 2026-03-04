@@ -91,22 +91,6 @@ done
 
 ---
 
-## Step 5: Remove User Config (Optional)
-
-This deletes your saved preferences (depth, mode, speed, voice). Skip if you plan to reinstall later.
-
-```bash
-rm -rf ~/.config/code-explainer
-```
-
-**Verify:**
-
-```bash
-[ -d ~/.config/code-explainer ] && echo "WARNING: config directory still exists" || echo "Config removed"
-```
-
----
-
 ## All-in-One Script
 
 To remove everything in one go, run this from your terminal:
@@ -136,10 +120,6 @@ rm -f ~/.claude-explainer-port ~/.claude-explainer-token
 rm -f /tmp/tts-server.sock /tmp/tts-server.pid /tmp/tts-server.log
 echo "  Cleaned up runtime files"
 
-# 5. Remove config
-rm -rf ~/.config/code-explainer
-echo "  Removed user config"
-
 echo ""
 echo "Done. Reload your editor: Cmd+Shift+P → 'Developer: Reload Window'"
 ```
@@ -154,4 +134,3 @@ echo "Done. Reload your editor: Cmd+Shift+P → 'Developer: Reload Window'"
 | VS Code extension | Editor extensions directory | ~1 MB |
 | Port/token files | `~/.claude-explainer-port`, `~/.claude-explainer-token` | <1 KB |
 | TTS runtime files | `/tmp/tts-server.*` | <1 KB |
-| User config | `~/.config/code-explainer/` | <1 KB |
