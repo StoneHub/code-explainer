@@ -189,17 +189,9 @@ function render() {
 	}
 
 	if (state.status === "stopped") {
-		// If audio is still playing, wait for it to finish before showing done view
-		if (activeSources.length > 0) {
-			const lastSource = activeSources[activeSources.length - 1];
-			const originalOnEnded = lastSource.onended;
-			lastSource.onended = (e) => {
-				if (originalOnEnded) originalOnEnded.call(lastSource, e);
-				showDoneView();
-			};
-			return;
-		}
-		showDoneView();
+		idleView.style.display = "";
+		activeView.style.display = "none";
+		doneView.style.display = "none";
 		return;
 	}
 

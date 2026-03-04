@@ -78,7 +78,7 @@ export class Walkthrough extends EventEmitter {
 	next(): boolean {
 		const nextIdx = this.state.currentIndex + 1;
 		if (nextIdx >= this.state.segments.length) {
-			this.state.status = "stopped";
+			this.state.status = "paused";
 			this.emit("status", this.state.status);
 			return false;
 		}
