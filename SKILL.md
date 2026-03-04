@@ -50,3 +50,6 @@ You MUST complete these steps in order:
 | Segments too large | Overview: max 80 lines. Detailed: max 40 lines. Split if bigger |
 | Not speaking before explaining | If TTS is enabled, ALWAYS run speak.sh after writing the explanation |
 | Speaking markdown formatting | Strip all backticks, bold markers, line refs from spoken text |
+| Explaining obvious code | Standard loops, imports, null checks — skip them or say "this is standard X" and move on |
+| Missing the "why" | Always explain intent before mechanism — what problem does this code solve? |
+| Ignoring complexity tags | Use `[core]`/`[wiring]`/`[supporting]` from the plan to calibrate explanation depth |
