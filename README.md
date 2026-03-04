@@ -43,6 +43,17 @@
 
 ## 🔧 Installation
 
+Just tell Claude Code:
+
+```
+Install the code explainer skill from https://github.com/Royal-lobster/code-explainer
+```
+
+Claude will clone the repo into `~/.claude/skills/explainer`, run `setup.sh`, and ask you to reload your editor — all while keeping you in the loop at each step.
+
+<details>
+<summary>📋 Manual installation</summary>
+
 ```bash
 # 1. Clone directly into Claude Code skills directory
 mkdir -p ~/.claude/skills
@@ -60,6 +71,8 @@ The setup script handles:
 - 🧩 VS Code extension build and installation (.vsix for VS Code + Cursor)
 - 🗣️ Voice model download (~330 MB)
 - 🔑 Script permissions
+
+</details>
 
 ## 💬 Usage
 
