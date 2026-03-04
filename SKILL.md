@@ -20,7 +20,7 @@ Interactive code walkthrough skill. Scans the codebase for a feature, builds a s
 
 You MUST complete these steps in order:
 
-1. **Assess familiarity** — Read `docs/config.md` for saved preferences. If no config exists, read `docs/step1-assess.md` and ask the user.
+1. **Assess familiarity** — Read `docs/step1-assess.md` and ask the user their preferences.
 2. **Scan the codebase** — Read `docs/step2-scan.md` for sub-agent dispatch instructions.
 3. **Build walkthrough plan** — Read `docs/step3-plan.md` for plan format and presentation.
 4. **Present plan** — (covered in `docs/step3-plan.md`)

@@ -33,7 +33,6 @@
 - 🎬 **Three Modes** — Autoplay (hands-free), Interactive + TTS, or Interactive (text only)
 - 🧠 **Adaptive Depth** — Overview, detailed, or focused explanations based on your familiarity
 - 📋 **Plan-First** — Scans the codebase, presents a walkthrough plan, and lets you reorder before starting
-- 💾 **Persistent Config** — Saves your preferences (depth, mode, speed, voice) to `~/.config/code-explainer/config.json`
 
 ## 📦 Requirements
 
@@ -202,7 +201,6 @@ code-explainer/
 │   └── 🐍 tts_server.py             # Persistent TTS server (Kokoro-82M)
 ├── 📂 docs/
 │   ├── 📖 setup.md                  # Setup reference
-│   ├── ⚙️ config.md                 # User preferences & config schema
 │   ├── 1️⃣ step1-assess.md           # Preference gathering
 │   ├── 2️⃣ step2-scan.md             # Codebase scanning via sub-agent
 │   ├── 3️⃣ step3-plan.md             # Walkthrough plan generation
