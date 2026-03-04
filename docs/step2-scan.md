@@ -24,11 +24,17 @@ Return a structured result:
 - **Call chain**: what calls what (A -> B -> C)
 - **Walkthrough plan**: ordered list of segments, each as:
   {file_absolute_path}:{startLine}-{endLine} -- {brief description} [{complexity}]
+    Sub-highlights (2-5 per segment, split by logical boundaries):
+      - {startLine}-{endLine} -- {brief description of this sub-range}
+      - {startLine}-{endLine} -- {brief description of this sub-range}
 
   Where {complexity} is one of:
   - `[core]` — central logic, the "meat" of the feature. Explain thoroughly.
   - `[wiring]` — boilerplate, config, module setup, DI registration. Breeze through.
   - `[supporting]` — helpers, utilities, types. Explain briefly.
+
+  Sub-highlights should split each segment into focused 5-15 line blocks at logical boundaries
+  (imports, function signatures, conditionals, return values, setup vs logic).
 
 Depth level: {overview|detailed|focused}
 Segment sizing:

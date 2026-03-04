@@ -27,10 +27,15 @@ fi
             "id": 1,
             "file": "/absolute/path/to/file.ts",
             "start": 1,
-            "end": 20,
+            "end": 40,
             "title": "Module definition",
-            "explanation": "This is the **module definition**. It imports all the services needed for order matching.",
-            "ttsText": "This is the module definition. It imports all the services needed for order matching."
+            "explanation": "This is the **module definition**. It imports all the services and sets up the constructor.",
+            "ttsText": "This is the module definition. It imports all the services and sets up the constructor.",
+            "highlights": [
+                { "start": 1, "end": 8, "ttsText": "First we have the imports, pulling in the services needed for order matching." },
+                { "start": 10, "end": 25, "ttsText": "Next, the class definition with its injectable decorator and constructor dependencies." },
+                { "start": 27, "end": 40, "ttsText": "Finally, the initialization method that loads existing orders into the in-memory book." }
+            ]
         }
     ]
 }
@@ -85,11 +90,28 @@ Handle by sending plan mutations:
 
 ## Segment generation guidelines
 
-- Each segment should be 5-40 lines of code
+- Each segment should be 20-80 lines of code (the outer range)
 - `explanation` field supports simple markdown (bold, inline code)
 - `ttsText` field must be plain text — no markdown, no line references, no file paths
 - TTS text should be 2-4 sentences, conversational style
 - The sidebar auto-advances after each segment's TTS finishes
+
+### Sub-highlights
+
+Sub-highlights provide granular, line-by-line narration within a segment — the editor scrolls through each sub-range while its TTS chunk plays.
+
+**When to include `highlights`:**
+- **Required** for segments longer than 30 lines — these are too large to highlight as a single block
+- **Optional** for smaller segments — use them to call out an important line or logical boundary
+- **Skip** for very small segments (< 10 lines) where a single highlight is sufficient
+
+**Rules:**
+- 2-5 sub-ranges per segment, each a focused block of **5-15 lines**
+- Each highlight has its own `ttsText` (1-2 sentences) for that specific sub-range
+- Highlights advance sequentially — the editor highlights each sub-range while TTS plays its chunk
+- Split by logical boundaries: imports, function signature, conditionals/branches, return values, setup vs logic
+- The segment-level `ttsText` is used as fallback when `highlights` is omitted
+- Sub-highlight ranges must be within the segment's `start`-`end` range and should not overlap
 
 ## Autoplay narration style
 
