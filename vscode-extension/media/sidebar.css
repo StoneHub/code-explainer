@@ -397,6 +397,22 @@ body {
 	opacity: 0.6;
 }
 
+.segment-label {
+	flex: 1;
+	min-width: 0;
+}
+
+.segment-progress {
+	flex-shrink: 0;
+	margin-left: auto;
+	font-size: 0.8em;
+	opacity: 0.55;
+}
+
+.outline-segment-header.current .segment-progress {
+	opacity: 0.7;
+}
+
 
 /* ── Done view ── */
 

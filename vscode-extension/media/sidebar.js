@@ -311,8 +311,12 @@ function renderOutline(currentIdx) {
 			text.className = "segment-label";
 			text.textContent = `${i + 1}. ${seg.title}`;
 
+			const progress = document.createElement("span");
+			progress.className = "segment-progress";
+
 			header.appendChild(marker);
 			header.appendChild(text);
+			header.appendChild(progress);
 
 			// Clicking header navigates to segment
 			header.addEventListener("pointerdown", (e) => {
@@ -343,6 +347,22 @@ function renderOutline(currentIdx) {
 		if (i < currentIdx) marker.textContent = "\u2713";
 		else if (i === currentIdx) marker.textContent = "\u25B6";
 		else marker.textContent = "\u25CB";
+
+		// Update segment progress fraction
+		const progress = li.querySelector(".segment-progress");
+		const seg = state.segments[i];
+		const segTotal = (seg.highlights && seg.highlights.length > 0) ? seg.highlights.length : 1;
+		// For the current segment, prefer totalHighlights from highlight_advance
+		const total = (i === currentIdx && totalHighlights > 0) ? totalHighlights : segTotal;
+		if (total > 1) {
+			let completed;
+			if (i < currentIdx) completed = total;
+			else if (i === currentIdx) completed = currentHighlightIndex + 1;
+			else completed = 0;
+			progress.textContent = `${completed}/${total}`;
+		} else {
+			progress.textContent = "";
+		}
 	}
 }
 
