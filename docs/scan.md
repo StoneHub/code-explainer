@@ -41,11 +41,10 @@ Return a structured result:
   For constructors/function calls with multiple args, highlight each arg separately.
   For sequential operations (e.g., 3 DB updates in a row), one highlight per update.
 
-Depth level: {overview|detailed|focused}
+Depth level: {overview|deep-dive}
 Segment sizing:
 - Overview: 40-80 lines per segment, 4-8 segments total
-- Detailed: 15-40 lines per segment, 8-15 segments total
-- Focused: 1-3 segments, only what's relevant
+- Deep Dive: 15-40 lines per segment, 8-15 segments total
 
 Ordering: entry point first, follow data/call flow, group related logic, end with utilities/types/config.
 ```

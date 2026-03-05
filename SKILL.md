@@ -26,7 +26,7 @@ Complete these steps in order:
 
 | Mistake | Fix |
 |---------|-----|
-| Scope too large | Stick to segment boundaries. Overview: max 80 lines, Detailed: max 40. Split if bigger |
+| Scope too large | Stick to segment boundaries. Overview: max 80 lines, Deep Dive: max 40. Split if bigger |
 | Not connecting segments | Include a context line linking to previous segment |
 | Forgetting to highlight | Sidebar: automatic. Fallback: write to `~/.claude-highlight.json` |
 | Reading entire file | Use offset+limit on Read for just the segment |
