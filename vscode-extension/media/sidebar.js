@@ -390,6 +390,7 @@ document.addEventListener("keydown", (e) => {
 		// Only hold-pause if currently playing (not if user-paused)
 		if (state.status === "playing" && !holdPaused) {
 			holdPaused = true;
+			ensureAudioContext();
 			vscode.postMessage({ type: "play_pause" });
 		}
 	}
@@ -509,6 +510,10 @@ window.addEventListener("message", (event) => {
 			if (prevSegment !== msg.currentSegment) {
 				currentHighlightIndex = 0;
 				totalHighlights = 0;
+			}
+			// If something else resumed playback while spacebar was held, clear the flag
+			if (state.status !== "paused") {
+				holdPaused = false;
 			}
 			awaitingHighlightAdvance = state.status === "playing";
 			render();
