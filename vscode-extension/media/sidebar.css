@@ -442,22 +442,18 @@ body {
 
 .outline-highlights.expanded {
 	max-height: 500px;
+	overflow-y: auto;
 }
 
 .outline-highlight {
 	padding: 3px 8px;
 	font-size: 0.8em;
-	cursor: pointer;
+	cursor: default;
 	display: flex;
 	align-items: center;
 	gap: 4px;
 	opacity: 0.7;
 	border-radius: 3px;
-}
-
-.outline-highlight:hover {
-	background: var(--vscode-list-hoverBackground);
-	opacity: 1;
 }
 
 .outline-highlight.current {

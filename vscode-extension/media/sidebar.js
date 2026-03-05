@@ -337,16 +337,19 @@ function renderOutline(currentIdx) {
 			const marker = document.createElement("span");
 			marker.className = "marker";
 
-			const expandIcon = document.createElement("span");
-			expandIcon.className = "expand-icon";
-			expandIcon.textContent = "\u25B8";
+			let expandIcon = null;
+			if (seg.highlights && seg.highlights.length > 1) {
+				expandIcon = document.createElement("span");
+				expandIcon.className = "expand-icon";
+				expandIcon.textContent = "\u25B8";
+			}
 
 			const text = document.createElement("span");
 			text.className = "segment-label";
 			text.textContent = `${i + 1}. ${seg.title}`;
 
 			header.appendChild(marker);
-			header.appendChild(expandIcon);
+			if (expandIcon) header.appendChild(expandIcon);
 			header.appendChild(text);
 
 			// Clicking header navigates to segment
@@ -371,25 +374,11 @@ function renderOutline(currentIdx) {
 					hlMarker.className = "hl-marker";
 
 					const hlText = document.createElement("span");
-					// Use explanation if available, otherwise line range
-					hlText.textContent = hl.explanation
-						? hl.explanation.substring(0, 40) + (hl.explanation.length > 40 ? "..." : "")
-						: `Lines ${hl.start}-${hl.end}`;
+					const label = hl.ttsText || `Lines ${hl.start}-${hl.end}`;
+					hlText.textContent = label.length > 50 ? label.substring(0, 47) + "..." : label;
 
 					subLi.appendChild(hlMarker);
 					subLi.appendChild(hlText);
-
-					// Click to jump to specific highlight
-					const segId = seg.id;
-					const hlIdx = j;
-					subLi.addEventListener("pointerdown", (e) => {
-						e.preventDefault();
-						e.stopPropagation();
-						// Navigate to segment first, then to highlight
-						vscode.postMessage({ type: "goto_segment", segmentId: segId });
-						// TODO: need a way to jump to specific highlight within segment
-						// For now, just navigate to the segment
-					});
 
 					subList.appendChild(subLi);
 				}
