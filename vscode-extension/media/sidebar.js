@@ -307,19 +307,11 @@ function renderOutline(currentIdx) {
 			const marker = document.createElement("span");
 			marker.className = "marker";
 
-			let expandIcon = null;
-			if (seg.highlights && seg.highlights.length > 1) {
-				expandIcon = document.createElement("span");
-				expandIcon.className = "expand-icon";
-				expandIcon.textContent = "\u25B8";
-			}
-
 			const text = document.createElement("span");
 			text.className = "segment-label";
 			text.textContent = `${i + 1}. ${seg.title}`;
 
 			header.appendChild(marker);
-			if (expandIcon) header.appendChild(expandIcon);
 			header.appendChild(text);
 
 			// Clicking header navigates to segment
@@ -329,33 +321,6 @@ function renderOutline(currentIdx) {
 			});
 
 			li.appendChild(header);
-
-			// Nested highlights
-			if (seg.highlights && seg.highlights.length > 1) {
-				const subList = document.createElement("ul");
-				subList.className = "outline-highlights";
-
-				for (let j = 0; j < seg.highlights.length; j++) {
-					const hl = seg.highlights[j];
-					const subLi = document.createElement("li");
-					subLi.className = "outline-highlight";
-
-					const hlMarker = document.createElement("span");
-					hlMarker.className = "hl-marker";
-
-					const hlText = document.createElement("span");
-					const label = hl.ttsText || `Lines ${hl.start}-${hl.end}`;
-					hlText.textContent = label.length > 50 ? label.substring(0, 47) + "..." : label;
-
-					subLi.appendChild(hlMarker);
-					subLi.appendChild(hlText);
-
-					subList.appendChild(subLi);
-				}
-
-				li.appendChild(subList);
-			}
-
 			list.appendChild(li);
 		}
 	}
@@ -365,10 +330,7 @@ function renderOutline(currentIdx) {
 	for (let i = 0; i < items.length; i++) {
 		const li = items[i];
 		const header = li.querySelector(".outline-segment-header");
-		const expandIcon = li.querySelector(".expand-icon");
-		const subList = li.querySelector(".outline-highlights");
 
-		// Update markers and classes
 		if (i === currentIdx) {
 			header.className = "outline-segment-header current";
 		} else if (i < currentIdx) {
@@ -381,38 +343,6 @@ function renderOutline(currentIdx) {
 		if (i < currentIdx) marker.textContent = "\u2713";
 		else if (i === currentIdx) marker.textContent = "\u25B6";
 		else marker.textContent = "\u25CB";
-
-		// Expand/collapse
-		if (subList) {
-			if (i === currentIdx) {
-				subList.classList.add("expanded");
-				if (expandIcon) expandIcon.textContent = "\u25BE";
-			} else {
-				subList.classList.remove("expanded");
-				if (expandIcon) expandIcon.textContent = "\u25B8";
-			}
-		}
-
-		// Update highlight markers
-		if (subList) {
-			const hlItems = subList.children;
-			for (let j = 0; j < hlItems.length; j++) {
-				const hlMarker = hlItems[j].querySelector(".hl-marker");
-				if (i < currentIdx) {
-					hlItems[j].className = "outline-highlight completed";
-					hlMarker.textContent = "\u2713";
-				} else if (i === currentIdx && j < currentHighlightIndex) {
-					hlItems[j].className = "outline-highlight completed";
-					hlMarker.textContent = "\u2713";
-				} else if (i === currentIdx && j === currentHighlightIndex) {
-					hlItems[j].className = "outline-highlight current";
-					hlMarker.textContent = "\u25B8";
-				} else {
-					hlItems[j].className = "outline-highlight";
-					hlMarker.textContent = "\u00B7";
-				}
-			}
-		}
 	}
 }
 

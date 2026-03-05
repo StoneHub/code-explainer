@@ -397,52 +397,6 @@ body {
 	opacity: 0.6;
 }
 
-.expand-icon {
-	width: 12px;
-	font-size: 0.75em;
-	flex-shrink: 0;
-	transition: transform 0.15s ease;
-}
-
-.outline-highlights {
-	list-style: none;
-	padding-left: 28px;
-	max-height: 0;
-	overflow: hidden;
-	transition: max-height 0.2s ease;
-}
-
-.outline-highlights.expanded {
-	max-height: 500px;
-	overflow-y: auto;
-}
-
-.outline-highlight {
-	padding: 3px 8px;
-	font-size: 0.8em;
-	cursor: default;
-	display: flex;
-	align-items: center;
-	gap: 4px;
-	opacity: 0.7;
-	border-radius: 3px;
-}
-
-.outline-highlight.current {
-	opacity: 1;
-	color: var(--vscode-list-activeSelectionForeground);
-}
-
-.outline-highlight.completed {
-	opacity: 0.5;
-}
-
-.hl-marker {
-	width: 12px;
-	text-align: center;
-	flex-shrink: 0;
-	font-size: 0.8em;
-}
 
 /* ── Done view ── */
 
