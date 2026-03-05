@@ -22,7 +22,7 @@
 - 🎬 **Three Modes** — Walkthrough (hands-free with TTS), Read (text in terminal), or Podcast (single audio file)
 - 🧠 **Adaptive Depth** — Overview, detailed, or focused explanations based on your familiarity
 - 📋 **Plan-First** — Scans the codebase, presents a walkthrough plan, and lets you reorder before starting
-- 💾 **Save & Replay** — Save walkthroughs to `.walkthrough.json` files for later replay
+- 💾 **Save & Share** — Save walkthroughs to `.walkthrough.json` files, replay later or share with teammates via the repo
 - ⌨️ **Keyboard Shortcuts** — Full keybinding support for hands-free navigation
 
 ## 📦 Requirements
@@ -150,6 +150,29 @@ The VS Code sidebar provides buttons for all walkthrough controls:
 - 🗣️ **Voice** — Select TTS voice
 - 🔇 **Mute / Unmute** — Toggle voice narration
 - 🔄 **Restart** — Restart walkthrough from the beginning
+- 💾 **Save** — Save current walkthrough to `.walkthroughs/` for later replay
+- ✕ **Close** — Close walkthrough (prompts to save if unsaved)
+
+### 💾 Save & Share
+
+Save walkthroughs as portable JSON files that live in your repo:
+
+```bash
+# Save via CLI
+./scripts/explainer.sh save auth-flow
+
+# Load a saved walkthrough
+./scripts/explainer.sh load auth-flow
+
+# List all saved walkthroughs
+./scripts/explainer.sh list
+```
+
+Or use the VS Code command palette:
+- **Code Explainer: Save Walkthrough** — Save with a custom name
+- **Code Explainer: Load Walkthrough** — Browse and load saved walkthroughs
+
+Saved walkthroughs are stored in `.walkthroughs/` at the workspace root with relative file paths, so teammates can pull them and replay on their own machine. The sidebar also shows a browse list of saved walkthroughs when no walkthrough is active.
 
 ### ⌨️ Keyboard Shortcuts
 
