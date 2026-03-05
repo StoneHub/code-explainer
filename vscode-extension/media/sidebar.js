@@ -415,6 +415,20 @@ window.addEventListener("message", (event) => {
 	const msg = event.data;
 
 	switch (msg.type) {
+		case "server_loading": {
+			const btn = document.getElementById("btn-play-pause");
+			if (msg.loading) {
+				btn.classList.add("loading");
+				btn.setAttribute("aria-busy", "true");
+				btn.setAttribute("aria-disabled", "true");
+			} else {
+				btn.classList.remove("loading");
+				btn.removeAttribute("aria-busy");
+				btn.removeAttribute("aria-disabled");
+			}
+			break;
+		}
+
 		case "highlight_advance":
 			currentHighlightIndex = msg.highlightIndex;
 			totalHighlights = msg.totalHighlights;
@@ -435,9 +449,14 @@ window.addEventListener("message", (event) => {
 			render();
 			break;
 
-		case "audio_chunk":
+		case "audio_chunk": {
+			const playBtn = document.getElementById("btn-play-pause");
+			playBtn.classList.remove("loading");
+			playBtn.removeAttribute("aria-busy");
+			playBtn.removeAttribute("aria-disabled");
 			playAudioChunk(msg.data, msg.sampleRate);
 			break;
+		}
 
 		case "audio_end":
 			onAudioEnd();
