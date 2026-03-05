@@ -94,21 +94,18 @@ function startServer(): Promise<boolean> {
 		const pythonBin = findVenvPython();
 		console.log(`[tts-bridge] Starting TTS server daemon using ${pythonBin}...`);
 
-		try {
-			cp.execFileSync(pythonBin, [SERVER_SCRIPT, "--daemon"], {
-				timeout: 10_000,
-				stdio: "ignore",
-			});
-		} catch (err) {
-			console.error("[tts-bridge] Failed to start server daemon:", err);
-			resolve(false);
-			return;
-		}
+		cp.execFile(pythonBin, [SERVER_SCRIPT, "--daemon"], { timeout: 10_000 }, (err) => {
+			if (err) {
+				console.error("[tts-bridge] Failed to start server daemon:", err);
+				clearInterval(poll);
+				resolve(false);
+			}
+		});
 
-		// Poll for socket to appear
+		// Poll for socket to appear, then ping to confirm server is ready
 		const deadline = Date.now() + SERVER_START_TIMEOUT_MS;
-		const poll = setInterval(() => {
-			if (fs.existsSync(SOCKET_PATH)) {
+		const poll = setInterval(async () => {
+			if (fs.existsSync(SOCKET_PATH) && await pingServer()) {
 				clearInterval(poll);
 				resolve(true);
 			} else if (Date.now() > deadline) {
@@ -120,11 +117,24 @@ function startServer(): Promise<boolean> {
 	});
 }
 
+let pendingEnsure: Promise<boolean> | undefined;
+
 /**
  * Ensure the TTS server is running. Starts it if needed.
+ * Concurrent calls are coalesced into a single startup attempt.
  * Returns true if server is available, false otherwise.
  */
 export async function ensureServer(): Promise<boolean> {
+	if (pendingEnsure) return pendingEnsure;
+	pendingEnsure = ensureServerImpl();
+	try {
+		return await pendingEnsure;
+	} finally {
+		pendingEnsure = undefined;
+	}
+}
+
+async function ensureServerImpl(): Promise<boolean> {
 	// Fast path: socket exists and server responds to ping
 	if (fs.existsSync(SOCKET_PATH)) {
 		if (await pingServer()) {
@@ -154,6 +164,7 @@ export function streamTTS(
 	onError: (err: Error) => void,
 ): () => void {
 	let aborted = false;
+	let conn: net.Socket | undefined;
 
 	const run = async () => {
 		if (!(await ensureServer())) {
@@ -161,13 +172,14 @@ export function streamTTS(
 			return;
 		}
 		if (aborted) return;
-		connectAndStream(text, options, onChunk, onEnd, onError, () => aborted);
+		conn = connectAndStream(text, options, onChunk, onEnd, onError, () => aborted);
 	};
 
 	run();
 
 	return () => {
 		aborted = true;
+		if (conn) conn.destroy();
 	};
 }
 
@@ -181,7 +193,7 @@ function connectAndStream(
 	onEnd: () => void,
 	onError: (err: Error) => void,
 	isAborted: () => boolean,
-): void {
+): net.Socket {
 	let ended = false;
 
 	const conn = net.createConnection(SOCKET_PATH);
@@ -239,6 +251,8 @@ function connectAndStream(
 			onEnd();
 		}
 	});
+
+	return conn;
 }
 
 /**

@@ -125,7 +125,10 @@ def run_server():
                     f"[tts-server] Idle for {int(idle)}s, shutting down to free memory.",
                     flush=True,
                 )
-                cleanup()
+                # Send SIGTERM to main thread — sys.exit() from a daemon thread
+                # only kills the thread, not the process
+                os.kill(os.getpid(), signal.SIGTERM)
+                return
 
     if IDLE_TIMEOUT > 0:
         watchdog = threading.Thread(target=idle_watchdog, daemon=True)
