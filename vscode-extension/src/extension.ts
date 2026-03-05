@@ -146,6 +146,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
 	let currentChunkAbort: (() => void) | undefined;
 	let highlightLoopGeneration = 0;
+	// When navigating prev_highlight across segment boundary, we want to start
+	// from the last highlight of the previous segment instead of the default 0.
+	let pendingHighlightStart: number | undefined;
 
 	/** Pre-warm the TTS server then resume playback from a specific highlight index. */
 	function preWarmAndResume(startHighlight: number): void {
@@ -259,7 +262,9 @@ export function activate(context: vscode.ExtensionContext): void {
 		}
 		sidebar.sendAudioStop();
 
-		playSegmentHighlights(segment, walkthrough, sidebar).catch((err) => {
+		const startIdx = pendingHighlightStart ?? 0;
+		pendingHighlightStart = undefined;
+		playSegmentHighlights(segment, walkthrough, sidebar, startIdx).catch((err) => {
 			console.error("[code-explainer] Highlight loop error:", err);
 		});
 	});
@@ -346,7 +351,11 @@ export function activate(context: vscode.ExtensionContext): void {
 				if (seg?.highlights && seg.highlights.length > 0) {
 					const curIdx = walkthrough.getHighlightIndex();
 					if (curIdx >= seg.highlights.length - 1) {
-						// At last sub-segment — stay put (use segment-level next to advance)
+						// At last sub-segment — advance to next segment's first highlight
+						if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
+						if (abortTTS) { abortTTS(); abortTTS = undefined; }
+						sidebar.sendAudioStop();
+						walkthrough.next(); // emits "segment" → starts from highlight 0
 						break;
 					}
 					const nextIdx = curIdx + 1;
@@ -371,7 +380,18 @@ export function activate(context: vscode.ExtensionContext): void {
 				if (seg?.highlights && seg.highlights.length > 0) {
 					const curIdx = walkthrough.getHighlightIndex();
 					if (curIdx <= 0) {
-						// At first sub-segment — stay put (use segment-level prev to go back)
+						// At first sub-segment — go to previous segment's last highlight
+						const prevSegIdx = walkthrough.getState().currentIndex - 1;
+						if (prevSegIdx < 0) break; // Already at the very first segment
+						const prevSeg = walkthrough.getState().segments[prevSegIdx];
+						const prevHighlightCount = prevSeg?.highlights?.length ?? 0;
+						if (prevHighlightCount > 0) {
+							pendingHighlightStart = prevHighlightCount - 1;
+						}
+						if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
+						if (abortTTS) { abortTTS(); abortTTS = undefined; }
+						sidebar.sendAudioStop();
+						walkthrough.prev(); // emits "segment" → pendingHighlightStart used
 						break;
 					}
 					const prevIdx = curIdx - 1;
