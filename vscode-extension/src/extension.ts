@@ -76,7 +76,8 @@ function playHighlightChunk(
 	let aborted = false;
 
 	const promise = new Promise<void>((resolve) => {
-		highlightSubRange(segment.file, highlight.start, highlight.end).catch(() => {});
+		const hlIdx = segment.highlights ? segment.highlights.indexOf(highlight) : undefined;
+		highlightSubRange(segment.file, highlight.start, highlight.end, segment.highlights, hlIdx).catch(() => {});
 
 		if (highlight.ttsText && isTTSAvailable()) {
 			// Wait for the webview to signal actual playback completion,
@@ -359,7 +360,7 @@ export function activate(context: vscode.ExtensionContext): void {
 						});
 					} else {
 						sidebar.sendHighlightAdvance(nextIdx, seg.highlights.length);
-						highlightSubRange(seg.file, seg.highlights[nextIdx].start, seg.highlights[nextIdx].end).catch(() => {});
+						highlightSubRange(seg.file, seg.highlights[nextIdx].start, seg.highlights[nextIdx].end, seg.highlights, nextIdx).catch(() => {});
 					}
 				}
 				break;
@@ -384,7 +385,7 @@ export function activate(context: vscode.ExtensionContext): void {
 						});
 					} else {
 						sidebar.sendHighlightAdvance(prevIdx, seg.highlights.length);
-						highlightSubRange(seg.file, seg.highlights[prevIdx].start, seg.highlights[prevIdx].end).catch(() => {});
+						highlightSubRange(seg.file, seg.highlights[prevIdx].start, seg.highlights[prevIdx].end, seg.highlights, prevIdx).catch(() => {});
 					}
 				}
 				break;
