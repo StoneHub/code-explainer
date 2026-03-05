@@ -128,7 +128,6 @@ export async function highlightSubRange(
 	startLine: number,
 	endLine: number,
 	allHighlights?: { start: number; end: number }[],
-	activeIndex?: number,
 ): Promise<void> {
 	const zeroStart = Math.max(0, startLine - 1);
 	const zeroEnd = Math.max(zeroStart, endLine - 1);
