@@ -16,10 +16,11 @@ Complete these steps in order:
    - **Assess familiarity (AskUserQuestion):** Read `docs/assess.md` and ask preferences.
 
 1. **Scout** — Read `docs/scan.md`. Dispatch Haiku sub-agent to discover relevant files and map the call chain. No highlights yet — discovery only.
-2. **Plan** — Read `docs/plan.md`. Dispatch Sonnet sub-agent to build narrative plan and transition objects. Immediately send stub `set_plan` to sidebar so the outline is visible. Present plan in chat and wait for user approval.
-3. **Generate segments** — Read `docs/segments.md`. Dispatch parallel segment agents (Haiku for Overview, Sonnet for Deep Dive) — one per segment, capped at 5 concurrent. Fire `replace_segment` as each completes. User can start walkthrough before all segments finish.
-4. **Execute walkthrough** — Read the doc for chosen mode: `docs/walkthrough.md`, `docs/read.md`, or `docs/podcast.md`. Walkthrough and podcast reference `docs/tts.md`.
-5. **Wrap up** — 3-5 key takeaways, how feature fits the broader architecture, offer to dive deeper or explain related features.
+2. **Plan + generate** — Two paths depending on depth:
+   - **Overview** — Single Haiku sub-agent reads scout output, builds plan, generates highlights in one pass. Send `set_plan` when done.
+   - **Deep Dive** — Read `docs/plan.md`. Dispatch Sonnet planner to build narrative + transition objects, send stub `set_plan` immediately. Then read `docs/segments.md` and dispatch parallel Sonnet segment agents (capped at 5). Fire `replace_segment` as each completes.
+3. **Execute walkthrough** — Read the doc for chosen mode: `docs/walkthrough.md`, `docs/read.md`, or `docs/podcast.md`. Walkthrough and podcast reference `docs/tts.md`.
+4. **Wrap up** — 3-5 key takeaways, how feature fits the broader architecture, offer to dive deeper or explain related features.
 
 **First-time setup?** Read `docs/setup.md`.
 
@@ -40,5 +41,6 @@ Complete these steps in order:
 | Sub-highlights too broad | One concept per highlight, 1-8 lines each. Split multi-operation blocks. For constructors with N args, use N highlights. Deep Dive: 6-12 per segment, Overview: 3-6 |
 | Wrong field names in sidebar JSON | Use `start`/`end`/`title`/`ttsText`/`highlights` — NOT `startLine`/`endLine`/`label`/`subHighlights`. See `docs/plan.md` for exact schema |
 | Skipping `set_plan` before `goto` | Sidebar needs the full plan loaded first. Always send stub `set_plan` via `explainer.sh plan` before any `goto` or `replace_segment` messages |
-| Waiting for all segments before showing plan | Send stub `set_plan` immediately after planner. Fire `replace_segment` per agent as they finish. Don't batch |
-| Scout generating highlights | Scout only maps files and call chain. Highlights are the segment agents' job |
+| Waiting for all segments before showing plan | Deep Dive: send stub `set_plan` immediately after planner. Fire `replace_segment` per agent as they finish. Don't batch |
+| Scout generating highlights | Scout only maps files and call chain. Highlights are generated in step 2 (Overview: single agent, Deep Dive: parallel agents) |
+| Running planner + parallel agents for Overview | Overview uses one fast Haiku agent for plan + highlights. Planner and segment agents are Deep Dive only |

@@ -119,12 +119,18 @@ How does the WebSocket gateway handle events?
 ```
 1. 💬 You ask to explain a feature
 2. 🎯 Asks your depth preference (Overview / Deep Dive) and delivery mode
-3. 🔍 Scout sub-agent maps the codebase — discovers relevant files and call chain, no highlights yet
-4. 🗺️ Planner sub-agent builds narrative order and writes transition objects (how segments connect)
-5. ✅ Plan shown in sidebar + chat — you approve, reorder, or skip before generation starts
-6. ⚡ Parallel segment agents generate dense highlights (one per segment, capped at 5 concurrent)
-   Segments stream into the sidebar live via replace_segment as each agent finishes
+3. 🔍 Scout sub-agent maps the codebase — discovers relevant files and call chain
+
+Overview path (fast):
+4. 📋 Single agent builds plan + highlights in one pass → sends set_plan
+
+Deep Dive path (thorough):
+4. 🗺️ Planner builds narrative order + transition objects → sends stub set_plan immediately
+5. ⚡ Parallel segment agents (capped at 5) generate dense highlights
+   Segments stream into the sidebar live as each agent finishes
    You can start the walkthrough before all segments are ready
+
+6. ✅ Plan in sidebar + chat — approve, reorder, or skip before playback starts
 7. 🔄 Walkthrough runs based on your chosen mode:
    Walkthrough — sidebar drives playback automatically with TTS narration
    Read        — step through explanations in terminal, highlights code as you go

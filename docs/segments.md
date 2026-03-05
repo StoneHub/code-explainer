@@ -1,18 +1,13 @@
-# Step 3: Parallel Segment Agents
+# Step 3: Parallel Segment Agents (Deep Dive only)
+
+> **Overview mode** skips this step — the planner agent already sent `set_plan` with complete highlights.
 
 Dispatch **one sub-agent per segment** in parallel. Each agent reads its file deeply and generates dense, granular highlights. As each finishes, fire a `replace_segment` to populate the sidebar live.
-
-## Model by depth
-
-| Depth | Model |
-|-------|-------|
-| Overview | Haiku |
-| Deep Dive | Sonnet |
 
 ## Per-segment sub-agent
 
 Agent tool parameters:
-- `model`: `haiku` (overview) or `sonnet` (deep-dive)
+- `model`: `sonnet`
 - `description`: `Generate highlights for {segment.title}`
 
 ### Prompt template

@@ -1,4 +1,6 @@
-# Step 2: Planner
+# Step 2: Planner (Deep Dive only)
+
+> **Overview mode** skips this step — a single Haiku agent builds plan + highlights in one pass and sends `set_plan` directly.
 
 Dispatch a **Sonnet sub-agent** to turn the scout's file map into a narrative plan. The planner decides *how to tell the story*, not just what files exist.
 
