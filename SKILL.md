@@ -15,10 +15,11 @@ Complete these steps in order:
    - **Sidebar check (Bash):** `PORT=$(cat ~/.claude-explainer-port 2>/dev/null) && TOKEN=$(cat ~/.claude-explainer-token 2>/dev/null) && curl -sf -H "Authorization: Bearer $TOKEN" "http://localhost:$PORT/api/health"` — `{"status":"ok"}` means sidebar is active. When active, **NEVER output walkthrough content as terminal text**; all output goes through sidebar HTTP API only.
    - **Assess familiarity (AskUserQuestion):** Read `docs/assess.md` and ask preferences.
 
-1. **Scan codebase** — Read `docs/scan.md`. Dispatch haiku sub-agent with depth level from step 0.
-2. **Build + present plan** — Read `docs/plan.md`. Parse scan results into ordered segments, present to user, wait for approval.
-3. **Execute walkthrough** — Read the doc for chosen mode: `docs/walkthrough.md`, `docs/read.md`, or `docs/podcast.md`. Walkthrough and podcast reference `docs/tts.md`.
-4. **Wrap up** — 3-5 key takeaways, how feature fits the broader architecture, offer to dive deeper or explain related features.
+1. **Scout** — Read `docs/scan.md`. Dispatch Haiku sub-agent to discover relevant files and map the call chain. No highlights yet — discovery only.
+2. **Plan** — Read `docs/plan.md`. Dispatch Sonnet sub-agent to build narrative plan and transition objects. Immediately send stub `set_plan` to sidebar so the outline is visible. Present plan in chat and wait for user approval.
+3. **Generate segments** — Read `docs/segments.md`. Dispatch parallel segment agents (Haiku for Overview, Sonnet for Deep Dive) — one per segment, capped at 5 concurrent. Fire `replace_segment` as each completes. User can start walkthrough before all segments finish.
+4. **Execute walkthrough** — Read the doc for chosen mode: `docs/walkthrough.md`, `docs/read.md`, or `docs/podcast.md`. Walkthrough and podcast reference `docs/tts.md`.
+5. **Wrap up** — 3-5 key takeaways, how feature fits the broader architecture, offer to dive deeper or explain related features.
 
 **First-time setup?** Read `docs/setup.md`.
 
@@ -36,6 +37,8 @@ Complete these steps in order:
 | Ignoring complexity tags | `[core]` = thorough, `[wiring]` = breeze through, `[supporting]` = brief |
 | Sidebar check not parallelized | Dispatch Bash health check + AskUserQuestion in one response, not sequentially |
 | Text output when sidebar active | If health check returned ok, send plan JSON only — no terminal text |
-| Sub-highlights too broad | One concept per highlight, 1-8 lines each. Split multi-operation blocks. For constructors with N args, use N highlights. Target 4-10 highlights per segment |
-| Wrong field names in sidebar JSON | Use `start`/`end`/`title`/`ttsText`/`highlights` — NOT `startLine`/`endLine`/`label`/`subHighlights`. See `docs/plan.md` step 3a for exact schema |
-| Skipping `set_plan` before `goto` | Sidebar needs the full plan loaded first. Always send `set_plan` via `explainer.sh plan` before any `goto` messages |
+| Sub-highlights too broad | One concept per highlight, 1-8 lines each. Split multi-operation blocks. For constructors with N args, use N highlights. Deep Dive: 6-12 per segment, Overview: 3-6 |
+| Wrong field names in sidebar JSON | Use `start`/`end`/`title`/`ttsText`/`highlights` — NOT `startLine`/`endLine`/`label`/`subHighlights`. See `docs/plan.md` for exact schema |
+| Skipping `set_plan` before `goto` | Sidebar needs the full plan loaded first. Always send stub `set_plan` via `explainer.sh plan` before any `goto` or `replace_segment` messages |
+| Waiting for all segments before showing plan | Send stub `set_plan` immediately after planner. Fire `replace_segment` per agent as they finish. Don't batch |
+| Scout generating highlights | Scout only maps files and call chain. Highlights are the segment agents' job |

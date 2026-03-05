@@ -1,46 +1,73 @@
-# Step 3: Build + Present Plan
+# Step 2: Planner
 
-Parse the sub-agent's response into ordered segments.
+Dispatch a **Sonnet sub-agent** to turn the scout's file map into a narrative plan. The planner decides *how to tell the story*, not just what files exist.
 
-**Verify:** segments ordered by call flow, within size limits for chosen depth, absolute paths used. Split if needed.
+Immediately after the planner finishes, send a **stub `set_plan`** to the sidebar so the user sees the outline while segment agents run in the background.
 
-## 3a. Send plan to sidebar (if active)
+## Planner sub-agent
 
-Build a `set_plan` JSON message matching the sidebar API schema exactly:
+Agent tool parameters:
+- `model`: `sonnet`
+- `description`: `Plan walkthrough narrative for {feature}`
+
+### Prompt template
+
+```
+You are planning a code walkthrough for "{feature}".
+
+The scout found these files (in call-flow order):
+
+{scout_output}
+
+Your job is to produce an ordered list of walkthrough segments with narrative transition objects.
+Do NOT read the actual code — work only from the scout's summaries.
+
+For each segment output:
+
+{
+  "id": <sequential integer>,
+  "file": "<absolute path>",
+  "start": <1-based line number>,
+  "end": <1-based line number>,
+  "title": "<short segment label>",
+  "complexity": "<core|wiring|supporting>",
+  "previousContext": "<what the previous segment established, or 'Entry point' for first>",
+  "role": "<what this segment does in 1-2 sentences>",
+  "nextContext": "<what this segment hands off to the next>",
+  "narrativeHook": "<how to open the explanation — what angle makes this segment interesting>"
+}
+
+Rules:
+- Order by pedagogical flow, not just call order. Sometimes it's clearer to show the data shape before the code that creates it.
+- Keep [wiring] segments brief — flag them so the segment agent breezes through.
+- The narrativeHook should give the segment agent a concrete angle, not just "explain this file".
+- previousContext / nextContext are the connective tissue that makes segments feel like one continuous story.
+
+Return a JSON array of segment objects.
+```
+
+## Immediately after the planner finishes
+
+**1. Send a stub `set_plan` to the sidebar** (if active) with empty highlights. This makes the outline visible right away while segment agents generate in the background.
 
 ```json
 {
   "type": "set_plan",
-  "title": "Feature Name Walkthrough",
+  "title": "{feature} Walkthrough",
   "segments": [
     {
       "id": 1,
       "file": "/absolute/path/to/file.ts",
       "start": 10,
       "end": 45,
-      "title": "HTTP endpoint, request validation",
-      "explanation": "",
-      "highlights": [
-        { "start": 10, "end": 12, "ttsText": "First, the route decorator registers this as a POST endpoint at slash orders.", "explanation": "Route registration" },
-        { "start": 13, "end": 15, "ttsText": "The request body is validated against the CreateOrderDto schema.", "explanation": "Request validation" },
-        { "start": 17, "end": 19, "ttsText": "We extract the user ID from the authenticated request context.", "explanation": "Auth context extraction" },
-        { "start": 21, "end": 25, "ttsText": "The order is created by calling the order service with the validated payload.", "explanation": "Service delegation" },
-        { "start": 27, "end": 30, "ttsText": "Finally, the response is wrapped in a standard API envelope with the new order ID.", "explanation": "Response formatting" }
-      ]
+      "title": "HTTP endpoint handler",
+      "explanation": "Generating...",
+      "highlights": [{ "start": 10, "end": 45, "ttsText": "Generating..." }]
     }
   ]
 }
 ```
 
-**Field reference** (from `vscode-extension/src/types.ts`):
-- `id`: sequential integer
-- `file`: absolute path
-- `start` / `end`: 1-based line numbers (NOT `startLine` / `endLine`)
-- `title`: short segment label (NOT `label` or `description`)
-- `explanation`: markdown explanation (can be empty at plan time, filled during walkthrough)
-- `highlights`: required sub-ranges (minimum 1), each with `start`, `end`, `ttsText`, `explanation` (optional)
-
-Send via:
 ```bash
 cat > /tmp/walkthrough-plan.json << 'EOF'
 { "type": "set_plan", "title": "...", "segments": [...] }
@@ -48,18 +75,19 @@ EOF
 ~/.claude/skills/explainer/scripts/explainer.sh plan /tmp/walkthrough-plan.json
 ```
 
-## 3b. Present to user
+**2. Proceed to Step 3** — pass the planner's transition objects to the segment agents.
+
+## Present plan to user
+
+After sending to sidebar, also show the plan in chat so the user can reorder or skip segments before generation begins:
 
 ```
 I'll walk through {feature} in {N} segments:
 
-1. src/controllers/auth.controller.ts:10-45 -- HTTP endpoint, request validation [core]
-2. src/modules/auth.module.ts:1-30 -- Module registration and DI wiring [wiring]
-3. src/services/auth.service.ts:20-65 -- Core authentication logic [core]
-4. src/services/token.service.ts:15-50 -- JWT generation and verification [supporting]
+1. src/controllers/auth.controller.ts:10-45 — HTTP endpoint handler [core]
+2. src/modules/auth.module.ts:1-30 — Module registration [wiring]
+3. src/services/auth.service.ts:20-65 — Core authentication logic [core]
 ...
 
-Ready to start? You can reorder, skip, or add segments.
+Generating detailed explanations in the background. Say "go" to start, or adjust the plan first.
 ```
-
-Wait for user to approve, adjust, or say "go".
