@@ -50,7 +50,7 @@ Complete these steps in order:
 | Ignoring complexity tags | `[core]` = thorough, `[wiring]` = breeze through, `[supporting]` = brief |
 | Sidebar check not parallelized | Dispatch Bash health check + AskUserQuestion in one response, not sequentially |
 | Text output when sidebar active | If health check returned ok, send plan JSON only — no terminal text |
-| Sub-highlights too broad | One concept per highlight, 1-8 lines each. Split multi-operation blocks. For constructors with N args, use N highlights. Deep Dive: 6-12 per segment, Overview: 3-6 |
+| Sub-highlights too broad | Deep Dive: 1 line per highlight, 15-30 per segment. Every arg, assignment, and condition gets its own highlight. Overview: 1-8 lines, 3-6 per segment |
 | Wrong field names in sidebar JSON | Use `start`/`end`/`title`/`ttsText`/`highlights` — NOT `startLine`/`endLine`/`label`/`subHighlights`. See `docs/plan.md` for exact schema |
 | Skipping `set_plan` before `goto` | Sidebar needs the full plan loaded first. Always send stub `set_plan` via `explainer.sh plan` before any `goto` or `replace_segment` messages |
 | Waiting for all segments before showing plan | Deep Dive: send stub `set_plan` immediately after planner. Fire `replace_segment` per agent as they finish. Don't batch |

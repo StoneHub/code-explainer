@@ -50,17 +50,36 @@ Generate a JSON segment object:
 }
 
 Highlight rules:
-- One concept per highlight, 1-8 lines each
-- Deep Dive: 6-12 highlights per segment. Overview: 3-6.
-- Split multi-operation blocks (e.g., 3 DB calls → 3 highlights)
-- For constructors/calls with multiple args, one highlight per meaningful arg
-- ttsText: plain text only, no markdown, no file paths, no line references. Conversational, 1-2 sentences.
-- explanation: short markdown label (optional, shown in sidebar alongside code)
-- Open with a line that references the previousContext ("Building on the route handler we just saw...")
-- [wiring] segments: 1-3 highlights max, brief ttsText ("Standard module wiring — registers the services.")
-- [core] segments: thorough. Cover intent, mechanism, concrete scenario, non-obvious decisions.
+- **1 line per highlight** — the default. Only group into 2-3 lines when lines are truly inseparable (e.g., a multi-line string literal or chained call that can't be split).
+- Aim for **15-30 highlights per segment** in Deep Dive. More is better.
+- Every meaningful line gets its own highlight: each constructor arg, each assignment, each condition branch, each return value.
+- `ttsText`: **one short sentence**, plain text only. Label what the line does, not how. "This sets the retry limit to three attempts." not a paragraph.
+- `explanation`: 2-5 word label shown in sidebar. "Retry limit", "Auth token", "Error fallback". Think tooltip, not prose.
+- First highlight: open with a one-liner referencing previousContext. ("Picking up from the controller, here's where credentials are actually checked.")
+- `[wiring]` segments: still granular, but ttsText can be even shorter. "Registers the auth module." and move on.
+- `[core]` segments: hit every line. Don't skip anything that isn't pure boilerplate (imports, closing braces).
 
 Return only the JSON object, no prose.
+```
+
+### Example — constructor with 4 args
+
+```json
+"highlights": [
+  { "start": 12, "end": 12, "ttsText": "The constructor opens here.", "explanation": "Constructor" },
+  { "start": 13, "end": 13, "ttsText": "Injects the user repository for database access.", "explanation": "UserRepository" },
+  { "start": 14, "end": 14, "ttsText": "Injects the JWT service for token signing.", "explanation": "JwtService" },
+  { "start": 15, "end": 15, "ttsText": "Injects the mailer for sending verification emails.", "explanation": "MailerService" },
+  { "start": 16, "end": 16, "ttsText": "And the config service to pull environment values at runtime.", "explanation": "ConfigService" },
+  { "start": 18, "end": 18, "ttsText": "Immediately sets the token expiry from config — no magic number buried in the method.", "explanation": "Token expiry" }
+]
+```
+
+Not this:
+```json
+"highlights": [
+  { "start": 12, "end": 18, "ttsText": "The constructor injects dependencies and sets up config values.", "explanation": "Constructor" }
+]
 ```
 
 ## Fire replace_segment as each agent completes
