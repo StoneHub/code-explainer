@@ -124,16 +124,26 @@ def run_server():
             conn.close()
 
 
+def find_venv_python():
+    """Find the venv Python that has mlx-audio installed."""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    venv_python = os.path.join(script_dir, "..", ".venv", "bin", "python3")
+    if os.path.isfile(venv_python):
+        return os.path.abspath(venv_python)
+    return sys.executable
+
+
 if __name__ == "__main__":
     if "--daemon" in sys.argv:
+        python_bin = find_venv_python()
         log = open("/tmp/tts-server.log", "a")
         proc = subprocess.Popen(
-            [sys.executable, __file__],
+            [python_bin, __file__],
             stdout=log,
             stderr=log,
             start_new_session=True,
         )
-        print(f"[tts-server] Started daemon (PID {proc.pid})")
+        print(f"[tts-server] Started daemon (PID {proc.pid}) using {python_bin}")
         sys.exit(0)
 
     run_server()

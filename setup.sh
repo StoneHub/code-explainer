@@ -183,10 +183,8 @@ cd "$SCRIPT_DIR"
 # ── Step 5: Make scripts executable ─────────────────────────────────────────
 header "Setting up scripts"
 
-chmod +x "$SCRIPT_DIR/scripts/highlight.sh"
-chmod +x "$SCRIPT_DIR/scripts/speak.sh"
-chmod +x "$SCRIPT_DIR/scripts/present.sh"
-chmod +x "$SCRIPT_DIR/scripts/tts_client.py"
+chmod +x "$SCRIPT_DIR/scripts/explainer.sh"
+chmod +x "$SCRIPT_DIR/scripts/tts_server.py"
 chmod +x "$SCRIPT_DIR/setup.sh"
 ok "All scripts marked executable"
 
