@@ -25,7 +25,7 @@ Complete these steps in order:
 
 0. **Parallel init** — Dispatch both in a **single response**:
    - **Sidebar check (Bash):** `PORT=$(cat ~/.claude-explainer-port 2>/dev/null) && TOKEN=$(cat ~/.claude-explainer-token 2>/dev/null) && curl -sf -H "Authorization: Bearer $TOKEN" "http://localhost:$PORT/api/health"` — `{"status":"ok"}` means sidebar is active. When active, **NEVER output walkthrough content as terminal text**; all output goes through sidebar HTTP API only.
-   - **Assess familiarity (AskUserQuestion):** Read `docs/assess.md` and ask preferences.
+   - **Ask preferences (AskUserQuestion):** Read `docs/assess.md` and ask all three questions listed there (familiarity + depth level + delivery mode) in a single call. Do NOT skip any or invent new ones.
 
 1. **Scout** — Read `docs/scan.md`. Dispatch `SMALL` sub-agent to discover relevant files and map the call chain. No highlights yet — discovery only.
 2. **Plan + generate** — Two paths depending on depth:
