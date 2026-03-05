@@ -617,6 +617,15 @@ window.addEventListener("message", (event) => {
 			renderHighlightProgress();
 			const hlIdx = state.segments.findIndex((s) => s.id === state.currentSegment);
 			if (hlIdx !== -1) renderOutline(hlIdx);
+			// Update explanation if highlight has its own
+			if (msg.explanation) {
+				const explEl = document.getElementById("explanation-text");
+				explEl.classList.add("fade-out");
+				setTimeout(() => {
+					explEl.innerHTML = simpleMarkdown(msg.explanation);
+					explEl.classList.remove("fade-out");
+				}, 150);
+			}
 			break;
 		}
 
