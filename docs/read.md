@@ -35,7 +35,7 @@ Read(file_path, offset=startLine, limit=endLine-startLine+1)
 
 1. **Intent** (1-2 sentences) — What problem does this solve? What breaks without it?
 2. **Mechanism** — Walk through by concept, reference specific lines.
-   - Overview: 3-6 sentences. Detailed: 6-12 sentences.
+   - Overview: 3-6 sentences. Deep Dive: 6-12 sentences.
 3. **Concrete scenario** (1 sentence) — "When a user clicks Buy, this validates the price hasn't drifted."
 4. **Non-obvious decisions** — Only if genuine. Skip if straightforward.
 5. **Thread forward** (1 sentence) — Mental model for next segment, not just "next we see X".

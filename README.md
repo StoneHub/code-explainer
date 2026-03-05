@@ -20,7 +20,7 @@
 - 🎯 **Code Highlighting** — Automatically opens files, scrolls to code, and highlights 1–8 line ranges with per-highlight explanations
 - 🔊 **Local TTS** — Natural-sounding voice narration powered by Kokoro-82M (#1 ranked open-source TTS), running locally on Apple Silicon via mlx-audio
 - 🎬 **Three Modes** — Walkthrough (hands-free with TTS), Read (text in terminal), or Podcast (single audio file)
-- 🧠 **Adaptive Depth** — Overview, detailed, or focused explanations based on your familiarity
+- 🧠 **Adaptive Depth** — Overview or Deep Dive explanations based on your familiarity
 - 📋 **Plan-First** — Scans the codebase, presents a walkthrough plan, and lets you reorder before starting
 - 💾 **Save & Share** — Save walkthroughs to `.walkthrough.json` files, replay later or share with teammates via the repo
 - ⌨️ **Keyboard Shortcuts** — Full keybinding support for hands-free navigation
@@ -118,7 +118,7 @@ How does the WebSocket gateway handle events?
 
 ```
 1. 💬 You ask to explain a feature
-2. 🎯 Asks your familiarity level (overview / detailed / focused) and delivery mode
+2. 🎯 Asks your depth preference (Overview / Deep Dive) and delivery mode
 3. 🔍 Dispatches a lightweight sub-agent to scan the codebase
 4. 📋 Builds an ordered walkthrough plan with complexity tags ([core], [wiring], [supporting])
 5. ✅ You approve, reorder, or adjust the plan
