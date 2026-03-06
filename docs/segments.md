@@ -1,6 +1,6 @@
 # Step 3: Parallel Segment Agents (Deep Dive only)
 
-> **Overview mode** skips this step — the planner agent already sent `set_plan` with complete highlights.
+> **Overview mode** skips this step — the Overview agent already sent `set_plan` with complete highlights.
 
 Dispatch **one sub-agent per segment** in parallel. Each agent reads its file deeply and generates dense, granular highlights. Wait for ALL agents to complete before sending anything to the sidebar.
 
@@ -63,7 +63,7 @@ Think of highlights as a **teacher's pointer moving across the board while talki
 - `[wiring]` segments: **3-5 highlights max**. Hit only the non-obvious config choices. "Registers the auth module." and move on.
 - `[core]` segments: **8-12 highlights**. Cover every important decision, skip standard patterns.
 
-Write the JSON object to /tmp/segment-{id}.json using the Write tool. No prose, no wrapping — just the raw JSON object in the file.
+Create a unique temp directory for this session: `TMPDIR=$(mktemp -d)` (run once before dispatching agents, pass the path to each agent). Write the JSON object to `$TMPDIR/segment-{id}.json` using the Write tool. No prose, no wrapping — just the raw JSON object in the file.
 ```
 
 ### Example — constructor with 4 args
@@ -89,13 +89,13 @@ Not this — one highlight per line, self-contained statements that sound choppy
 
 ## Wait for all agents, then assemble from files
 
-Do NOT send anything to the sidebar until every agent has returned. Each agent writes its segment to `/tmp/segment-{id}.json`. Once all agents finish, assemble and send with one bash command:
+Do NOT send anything to the sidebar until every agent has returned. Each agent writes its segment to `$TMPDIR/segment-{id}.json`. Once all agents finish, assemble and send with one bash command:
 
 ```bash
-jq -n --arg title "{feature} Walkthrough" '{ type: "set_plan", title: $title, segments: [inputs] }' $(for i in $(seq 0 {lastSegmentId}); do echo "/tmp/segment-$i.json"; done) > /tmp/walkthrough-plan.json && ~/.claude/skills/explainer/scripts/explainer.sh plan /tmp/walkthrough-plan.json
+jq -n --arg title "{feature} Walkthrough" '{ type: "set_plan", title: $title, segments: [inputs] }' $(for i in $(seq 0 {lastSegmentId}); do echo "$TMPDIR/segment-$i.json"; done) > "$TMPDIR/walkthrough-plan.json" && ~/.claude/skills/explainer/scripts/explainer.sh plan "$TMPDIR/walkthrough-plan.json" && rm -rf "$TMPDIR"
 ```
 
-This avoids the main agent having to parse or re-serialize any segment JSON — `jq` handles assembly directly from the files the sub-agents wrote.
+This avoids the main agent having to parse or re-serialize any segment JSON — `jq` handles assembly directly from the files the sub-agents wrote. The `rm -rf` at the end cleans up the temp directory.
 
 ## Concurrency
 

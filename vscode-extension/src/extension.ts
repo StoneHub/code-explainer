@@ -68,14 +68,17 @@ function processHighlightFile(): void {
 
 interface SegmentTTSPlan {
 	fullText: string;
-	/** chunkBoundaries[i] = index of first chunk belonging to highlight i */
+	/** chunkBoundaries[i] = index of first chunk belonging to the i-th spoken highlight */
 	chunkBoundaries: number[];
+	/** Maps each entry in chunkBoundaries back to the original highlight index (handles gaps from empty ttsText) */
+	highlightIndices: number[];
 	totalChunks: number;
 }
 
 function buildSegmentTTSPlan(highlights: Highlight[], startFrom = 0): SegmentTTSPlan {
 	const SPLIT_RE = /(?<=[.!?])\s+/;
 	const chunkBoundaries: number[] = [];
+	const highlightIndices: number[] = [];
 	const textParts: string[] = [];
 	let totalChunks = 0;
 
@@ -84,11 +87,12 @@ function buildSegmentTTSPlan(highlights: Highlight[], startFrom = 0): SegmentTTS
 		if (!text) continue;
 		if (!/[.!?]$/.test(text)) text += ".";
 		chunkBoundaries.push(totalChunks);
+		highlightIndices.push(i);
 		totalChunks += text.split(SPLIT_RE).filter(Boolean).length;
 		textParts.push(text);
 	}
 
-	return { fullText: textParts.join(" "), chunkBoundaries, totalChunks };
+	return { fullText: textParts.join(" "), chunkBoundaries, highlightIndices, totalChunks };
 }
 
 // ── Main activation ──
@@ -277,7 +281,7 @@ export function activate(context: vscode.ExtensionContext): void {
 			const plan = buildSegmentTTSPlan(highlights, startFromHighlight);
 			if (plan.fullText && plan.chunkBoundaries.length > 0) {
 				// Show first highlight immediately
-				const firstHighlightIdx = startFromHighlight;
+				const firstHighlightIdx = plan.highlightIndices[0] ?? startFromHighlight;
 				wt.setHighlightIndex(firstHighlightIdx);
 				sb.sendHighlightAdvance(firstHighlightIdx, highlights.length, highlights[firstHighlightIdx].explanation);
 				await highlightSubRange(segment.file, highlights[firstHighlightIdx].start, highlights[firstHighlightIdx].end, highlights).catch(() => {});
@@ -296,8 +300,8 @@ export function activate(context: vscode.ExtensionContext): void {
 						playedChunks >= plan.chunkBoundaries[nextPointer]
 					) {
 						pointerOffset = nextPointer;
-						const highlightIdx = startFromHighlight + pointerOffset;
-						if (highlightIdx < highlights.length) {
+						const highlightIdx = plan.highlightIndices[nextPointer];
+						if (highlightIdx !== undefined && highlightIdx < highlights.length) {
 							wt.setHighlightIndex(highlightIdx);
 							sb.sendHighlightAdvance(highlightIdx, highlights.length, highlights[highlightIdx].explanation);
 							highlightSubRange(segment.file, highlights[highlightIdx].start, highlights[highlightIdx].end, highlights).catch(() => {});

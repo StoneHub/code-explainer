@@ -105,6 +105,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
 	/** Returns a promise that resolves when the webview signals playback is done */
 	waitForPlaybackComplete(): Promise<void> {
+		// Resolve any dangling previous wait to prevent leaked promises
+		this.playbackCompleteResolve?.();
 		return new Promise((resolve) => {
 			this.playbackCompleteResolve = resolve;
 		});

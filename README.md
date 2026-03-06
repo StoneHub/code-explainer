@@ -125,10 +125,9 @@ Overview path (fast):
 4. 📋 Single agent builds plan + highlights in one pass → sends set_plan
 
 Deep Dive path (thorough):
-4. 🗺️ Planner builds narrative order + transition objects → sends stub set_plan immediately
-5. ⚡ Parallel segment agents (capped at 5) generate dense highlights
-   Segments stream into the sidebar live as each agent finishes
-   You can start the walkthrough before all segments are ready
+4. 🗺️ Planner builds narrative order + transition objects
+5. ⚡ Parallel segment agents generate dense highlights
+   Waits for all agents to finish, then sends full set_plan to sidebar
 
 6. ✅ Plan in sidebar + chat — approve, reorder, or skip before playback starts
 7. 🔄 Walkthrough runs based on your chosen mode:

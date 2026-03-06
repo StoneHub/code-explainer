@@ -150,14 +150,19 @@ if [[ "$KEEP_MODELS" =~ ^[Nn] ]]; then
     NEW_MEDIUM="${NEW_MEDIUM:-$CURRENT_MEDIUM}"
     NEW_SMALL="${NEW_SMALL:-$CURRENT_SMALL}"
 
-    # Update SKILL.md with chosen models
+    # Update SKILL.md with chosen models (sanitize input to prevent markdown corruption)
     python3 - "$SKILL_FILE" "$NEW_LARGE" "$NEW_MEDIUM" "$NEW_SMALL" << 'PYEOF'
 import re, sys
-path, large, medium, small = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+
+def sanitize(val):
+    """Strip characters that would corrupt the markdown table."""
+    return val.replace('`', '').replace('|', '').replace('\n', '').strip()
+
+path, large, medium, small = sys.argv[1], sanitize(sys.argv[2]), sanitize(sys.argv[3]), sanitize(sys.argv[4])
 content = open(path).read()
-content = re.sub(r'(\| `LARGE` \| )`[^`]+`', f'\\1`{large}`', content)
-content = re.sub(r'(\| `MEDIUM` \| )`[^`]+`', f'\\1`{medium}`', content)
-content = re.sub(r'(\| `SMALL` \| )`[^`]+`', f'\\1`{small}`', content)
+content = re.sub(r'(\| `LARGE` \| )`[^`]+`', r'\1`' + large + '`', content)
+content = re.sub(r'(\| `MEDIUM` \| )`[^`]+`', r'\1`' + medium + '`', content)
+content = re.sub(r'(\| `SMALL` \| )`[^`]+`', r'\1`' + small + '`', content)
 open(path, 'w').write(content)
 PYEOF
 
