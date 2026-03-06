@@ -63,7 +63,7 @@ Think of highlights as a **teacher's pointer moving across the board while talki
 - `[wiring]` segments: **3-5 highlights max**. Hit only the non-obvious config choices. "Registers the auth module." and move on.
 - `[core]` segments: **8-12 highlights**. Cover every important decision, skip standard patterns.
 
-Return only the JSON object, no prose.
+Write the JSON object to /tmp/segment-{id}.json using the Write tool. No prose, no wrapping — just the raw JSON object in the file.
 ```
 
 ### Example — constructor with 4 args
@@ -87,28 +87,19 @@ Not this — one highlight per line, self-contained statements that sound choppy
 ]
 ```
 
-## Wait for all agents, then send one complete `set_plan`
+## Wait for all agents, then assemble from files
 
-Do NOT send anything to the sidebar until every agent has returned. Once all segments are ready, assemble them into a single `set_plan` and send it:
+Do NOT send anything to the sidebar until every agent has returned. Each agent writes its segment to `/tmp/segment-{id}.json`. Once all agents finish, assemble and send with one bash command:
 
 ```bash
-cat > /tmp/walkthrough-plan.json << 'EOF'
-{
-  "type": "set_plan",
-  "title": "{feature} Walkthrough",
-  "segments": [
-    { ...segment 1 with full highlights... },
-    { ...segment 2 with full highlights... },
-    ...
-  ]
-}
-EOF
-~/.claude/skills/explainer/scripts/explainer.sh plan /tmp/walkthrough-plan.json
+jq -n --arg title "{feature} Walkthrough" '{ type: "set_plan", title: $title, segments: [inputs] }' $(for i in $(seq 0 {lastSegmentId}); do echo "/tmp/segment-$i.json"; done) > /tmp/walkthrough-plan.json && ~/.claude/skills/explainer/scripts/explainer.sh plan /tmp/walkthrough-plan.json
 ```
 
-## Concurrency ceiling
+This avoids the main agent having to parse or re-serialize any segment JSON — `jq` handles assembly directly from the files the sub-agents wrote.
 
-Cap at **5 parallel agents** to avoid rate limits. If there are more segments, queue the remainder and dispatch as slots free up.
+## Concurrency
+
+Dispatch all segment agents at once — no artificial cap. If you hit rate limits, back off and retry the failed agents.
 
 ## After `set_plan` is sent
 
