@@ -182,14 +182,16 @@ export class ExplainerServer {
 
 	private handleGetState(res: http.ServerResponse): void {
 		const state = this.walkthrough.getState();
+		const currentSeg = state.segments[state.currentIndex];
 		res.writeHead(200);
 		res.end(
 			JSON.stringify({
 				title: state.title,
-				currentSegment: state.segments[state.currentIndex]?.id ?? -1,
+				currentSegment: currentSeg?.id ?? -1,
 				status: state.status,
 				totalSegments: state.segments.length,
 				currentIndex: state.currentIndex,
+				segment: currentSeg ?? null,
 			}),
 		);
 	}

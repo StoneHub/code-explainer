@@ -36,6 +36,16 @@ Complete these steps in order:
 
 **First-time setup?** Read `docs/setup.md`.
 
+## Q&A on Active Walkthrough
+
+When the user says they're in an active explainer walkthrough and asks a question (even in a new chat), skip the full checklist above and instead:
+
+1. **Get context:** Run `~/.claude/skills/explainer/scripts/explainer.sh state` — the response now includes a `segment` field with the full current segment (`file`, `start`, `end`, `title`, `explanation`, `highlights`). Use this to understand what code the user is currently viewing.
+2. **Read the code:** Use the segment's `file`, `start`, and `end` to read the relevant source code.
+3. **Answer in context:** Ground your answer in the specific code and segment the user is looking at. Reference line numbers from the segment, not abstract concepts.
+
+If `state` returns `status: "idle"` (no active walkthrough), check `.walkthroughs/` for saved plans and ask the user which one they mean.
+
 ## Common Mistakes
 
 | Mistake | Fix |
