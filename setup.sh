@@ -65,18 +65,35 @@ else
     warn "Non-ARM CPU detected — should still work, but performance may vary"
 fi
 
-# Editor CLI check (VS Code or Cursor)
+# Editor CLI check (VS Code-family + Cursor)
 EDITORS=()
 if command -v code &>/dev/null; then
     EDITORS+=("code")
     ok "VS Code CLI found: $(code --version | head -1)"
+fi
+if command -v code-insiders &>/dev/null; then
+    EDITORS+=("code-insiders")
+    ok "VS Code Insiders CLI found"
+fi
+if command -v codium &>/dev/null; then
+    EDITORS+=("codium")
+    ok "VSCodium CLI found"
 fi
 if command -v cursor &>/dev/null; then
     EDITORS+=("cursor")
     ok "Cursor CLI found"
 fi
 if [[ ${#EDITORS[@]} -eq 0 ]]; then
-    warn "No editor CLI found — skipping extension install/build for now (headless-safe mode)"
+    warn "No supported editor CLI found — skipping extension install/build for now (headless-safe mode)"
+    warn "Tip: install VS Code CLI ('code') or Cursor CLI to enable sidebar highlighting"
+fi
+
+# Optional ecosystem notes
+if command -v studio &>/dev/null || command -v android-studio &>/dev/null; then
+    warn "Android Studio detected: walkthrough text mode works, but VS Code sidebar extension is not installable there"
+fi
+if command -v antigravity &>/dev/null; then
+    ok "Antigravity CLI detected (model routing available for your agent workflows)"
 fi
 
 # Node.js check (for VS Code extension)
