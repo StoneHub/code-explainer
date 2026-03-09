@@ -45,17 +45,24 @@ echo -e "${BOLD}╚════════════════════�
 # ── Step 1: Check prerequisites ─────────────────────────────────────────────
 header "Checking prerequisites"
 
-# macOS check
-if [[ "$(uname)" != "Darwin" ]]; then
-    fail "This skill requires macOS (detected: $(uname))"
-fi
-ok "macOS detected"
+OS_NAME="$(uname)"
+TTS_DISABLED=false
 
-# Apple Silicon check
-if [[ "$(uname -m)" == "arm64" ]]; then
-    ok "Apple Silicon detected"
+# OS check
+if [[ "$OS_NAME" == "Darwin" ]]; then
+    ok "macOS detected"
+elif [[ "$OS_NAME" == "Linux" ]]; then
+    warn "Linux detected — enabling Linux-compatible mode"
+    TTS_DISABLED=true
 else
-    warn "Intel Mac detected — TTS will run on CPU (slower)"
+    fail "Unsupported OS: $OS_NAME (supported: macOS, Linux)"
+fi
+
+# CPU check
+if [[ "$(uname -m)" == "arm64" || "$(uname -m)" == "aarch64" ]]; then
+    ok "ARM64 detected"
+else
+    warn "Non-ARM CPU detected — should still work, but performance may vary"
 fi
 
 # Editor CLI check (VS Code or Cursor)
@@ -69,7 +76,7 @@ if command -v cursor &>/dev/null; then
     ok "Cursor CLI found"
 fi
 if [[ ${#EDITORS[@]} -eq 0 ]]; then
-    fail "No editor CLI found. Install VS Code ('code') or Cursor ('cursor') and enable the CLI command: Cmd+Shift+P → 'Shell Command: Install ...'"
+    warn "No editor CLI found — skipping extension install/build for now (headless-safe mode)"
 fi
 
 # Node.js check (for VS Code extension)
@@ -191,52 +198,63 @@ fi
 VENV_PYTHON="$VENV_DIR/bin/python3"
 
 # ── Step 3: Install TTS dependencies ────────────────────────────────────────
-header "Installing TTS dependencies (mlx-audio + sounddevice)"
+header "Installing TTS dependencies"
 
-echo "  This may take a few minutes on first install..."
-
-if $USE_UV; then
-    uv pip install --python "$VENV_PYTHON" pip mlx-audio sounddevice 2>&1 | grep -E "^(Installed|Already|Resolved)" | head -5
+if $TTS_DISABLED; then
+    warn "Skipping Kokoro/mlx-audio on this platform. Walkthrough still works; voice is disabled."
+    touch "$SCRIPT_DIR/.tts-disabled"
 else
-    "$VENV_PYTHON" -m pip install --quiet mlx-audio sounddevice 2>&1 | tail -3
-fi
-ok "TTS dependencies installed"
+    echo "  This may take a few minutes on first install..."
 
-# Verify TTS can import
-if "$VENV_PYTHON" -c "from mlx_audio.tts.generate import generate_audio; print('ok')" 2>/dev/null | grep -q "ok"; then
-    ok "TTS engine verified"
-else
-    warn "TTS import failed — TTS will fall back to macOS 'say' command"
+    if $USE_UV; then
+        uv pip install --python "$VENV_PYTHON" pip mlx-audio sounddevice 2>&1 | grep -E "^(Installed|Already|Resolved)" | head -5
+    else
+        "$VENV_PYTHON" -m pip install --quiet mlx-audio sounddevice 2>&1 | tail -3
+    fi
+    ok "TTS dependencies installed"
+
+    # Verify TTS can import
+    if "$VENV_PYTHON" -c "from mlx_audio.tts.generate import generate_audio; print('ok')" 2>/dev/null | grep -q "ok"; then
+        ok "TTS engine verified"
+        rm -f "$SCRIPT_DIR/.tts-disabled"
+    else
+        warn "TTS import failed — disabling TTS for this environment"
+        touch "$SCRIPT_DIR/.tts-disabled"
+    fi
 fi
 
 # ── Step 4: Build and install VS Code extension ─────────────────────────────
 header "Building and installing extension"
 
-cd "$EXT_DIR"
+if [[ ${#EDITORS[@]} -eq 0 ]]; then
+    skip "No editor CLI detected"
+else
+    cd "$EXT_DIR"
 
-# Install npm deps
-npm install --silent 2>&1 | tail -1
-ok "npm dependencies installed"
+    # Install npm deps
+    npm install --silent 2>&1 | tail -1
+    ok "npm dependencies installed"
 
-# Compile TypeScript
-npm run compile --silent 2>&1
-ok "TypeScript compiled"
+    # Compile TypeScript
+    npm run compile --silent 2>&1
+    ok "TypeScript compiled"
 
-# Package as VSIX
-npx @vscode/vsce package --no-dependencies --allow-star-activation --allow-missing-repository 2>&1 | grep -E "^( DONE|VSIX)" | head -1
-VSIX_FILE=$(ls -t "$EXT_DIR"/*.vsix 2>/dev/null | head -1)
-if [[ -z "$VSIX_FILE" ]]; then
-    fail "VSIX packaging failed — no .vsix file found"
+    # Package as VSIX
+    npx @vscode/vsce package --no-dependencies --allow-star-activation --allow-missing-repository 2>&1 | grep -E "^( DONE|VSIX)" | head -1
+    VSIX_FILE=$(ls -t "$EXT_DIR"/*.vsix 2>/dev/null | head -1)
+    if [[ -z "$VSIX_FILE" ]]; then
+        fail "VSIX packaging failed — no .vsix file found"
+    fi
+    ok "VSIX packaged: $(basename "$VSIX_FILE")"
+
+    # Install extension in all detected editors
+    for EDITOR_CLI in "${EDITORS[@]}"; do
+        "$EDITOR_CLI" --install-extension "$VSIX_FILE" --force 2>&1 | grep -v "^$"
+        ok "Extension installed in $EDITOR_CLI"
+    done
+
+    cd "$SCRIPT_DIR"
 fi
-ok "VSIX packaged: $(basename "$VSIX_FILE")"
-
-# Install extension in all detected editors
-for EDITOR_CLI in "${EDITORS[@]}"; do
-    "$EDITOR_CLI" --install-extension "$VSIX_FILE" --force 2>&1 | grep -v "^$"
-    ok "Extension installed in $EDITOR_CLI"
-done
-
-cd "$SCRIPT_DIR"
 
 # ── Step 5: Make scripts executable ─────────────────────────────────────────
 header "Setting up scripts"
@@ -249,8 +267,11 @@ ok "All scripts marked executable"
 # ── Step 6: Pre-download TTS model ──────────────────────────────────────────
 header "Pre-downloading TTS voice model"
 
-echo "  Downloading model (~330 MB on first run)..."
-if "$VENV_PYTHON" -c "
+if [[ -f "$SCRIPT_DIR/.tts-disabled" ]]; then
+    skip "TTS model pre-download"
+else
+    echo "  Downloading model (~330 MB on first run)..."
+    if "$VENV_PYTHON" -c "
 from mlx_audio.tts.generate import generate_audio
 import tempfile, os
 with tempfile.TemporaryDirectory() as d:
@@ -263,9 +284,10 @@ with tempfile.TemporaryDirectory() as d:
         verbose=False,
     )
 " 2>&1 | grep -v "^Fetching\|^$\|INFO\|pip\|spacy\|Collecting\|Downloading\|Installing\|Successfully\|✔" | tail -1; then
-    ok "TTS model downloaded and cached"
-else
-    warn "Model download had issues — will retry on first use"
+        ok "TTS model downloaded and cached"
+    else
+        warn "Model download had issues — will retry on first use"
+    fi
 fi
 
 # ── Done ────────────────────────────────────────────────────────────────────
