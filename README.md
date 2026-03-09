@@ -16,6 +16,11 @@
   <img src="docs/cover.png" alt="Code Explainer cover" width="100%" />
 </p>
 
+<p align="center">
+  <a href="https://youtu.be/3eX4hGW9ym8">🎬 Watch Demo</a> &nbsp;·&nbsp;
+  <a href="https://srujangurram.me/blog/code-explainer">📝 Read Writeup</a>
+</p>
+
 ---
 
 ## 🚀 Features
