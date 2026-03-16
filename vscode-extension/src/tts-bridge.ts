@@ -5,6 +5,7 @@ import * as cp from "child_process";
 
 const SOCKET_PATH = "/tmp/tts-server.sock";
 const PID_FILE = "/tmp/tts-server.pid";
+const TTS_DISABLED_MARKER = ".tts-disabled";
 const SAMPLE_RATE = 24000;
 const SERVER_START_TIMEOUT_MS = 30_000;
 
@@ -86,6 +87,14 @@ function getProjectRootCandidates(): string[] {
 		candidates.push(path.join(home, ".claude", "skills", "explainer"));
 	}
 	return candidates;
+}
+
+function isTtsMarkedDisabled(): boolean {
+	for (const root of getProjectRootCandidates()) {
+		const marker = path.join(root, TTS_DISABLED_MARKER);
+		if (fs.existsSync(marker)) return true;
+	}
+	return false;
 }
 
 /**
@@ -172,6 +181,9 @@ export async function ensureServer(): Promise<boolean> {
 }
 
 async function ensureServerImpl(): Promise<boolean> {
+	if (isTtsMarkedDisabled()) {
+		return false;
+	}
 	// Fast path: socket exists and server responds to ping
 	if (fs.existsSync(SOCKET_PATH)) {
 		if (await pingServer()) {
@@ -297,6 +309,7 @@ function connectAndStream(
  * For a more reliable check that auto-starts the server, use streamTTS directly.
  */
 export function isTTSAvailable(): boolean {
+	if (isTtsMarkedDisabled()) return false;
 	// If socket exists and process is alive, likely available
 	if (fs.existsSync(SOCKET_PATH) && isServerProcessAlive()) {
 		return true;
